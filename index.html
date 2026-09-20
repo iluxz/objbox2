@@ -17,6 +17,25 @@ canvas#pcv{position:fixed;top:0;left:0;width:100vw;height:100vh;display:block;po
 #tIn{flex:1;background:transparent;border:none;outline:none;color:rgba(43,208,208,0.8);font-family:inherit;font-size:13px;caret-color:rgba(43,208,208,0.8)}
 #stats{position:fixed;top:12px;left:12px;z-index:10;font-size:11px;color:rgba(255,255,255,0.3);pointer-events:none}
 #thI{position:fixed;top:12px;right:12px;z-index:10;font-size:11px;color:rgba(43,208,208,0.4);pointer-events:none;opacity:0;transition:opacity 0.3s}
+#objText{position:fixed;top:0;left:0;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:5;font-size:28px;color:rgba(43,208,208,0.85);text-shadow:0 0 20px rgba(43,208,208,0.4),0 0 40px rgba(43,208,208,0.2);opacity:0;transition:opacity 0.4s;font-family:'Consolas',monospace;letter-spacing:2px;text-align:center;padding:0 40px}
+#objText.on{opacity:1}
+#objText.shake{animation:objShake 0.08s infinite}
+#objText.glitch{animation:objGlitch 0.15s infinite}
+@keyframes objShake{
+  0%{transform:translate(0,0) rotate(0deg)}
+  25%{transform:translate(-2px,1px) rotate(-0.5deg)}
+  50%{transform:translate(2px,-1px) rotate(0.5deg)}
+  75%{transform:translate(-1px,-2px) rotate(-0.3deg)}
+  100%{transform:translate(1px,2px) rotate(0.3deg)}
+}
+@keyframes objGlitch{
+  0%{transform:translate(0,0);opacity:0.85}
+  20%{transform:translate(-3px,2px);opacity:0.6}
+  40%{transform:translate(3px,-2px);opacity:0.9}
+  60%{transform:translate(-1px,-3px);opacity:0.5}
+  80%{transform:translate(2px,1px);opacity:0.85}
+  100%{transform:translate(0,0);opacity:0.85}
+}
 </style>
 </head>
 <body>
@@ -25,6 +44,7 @@ canvas#pcv{position:fixed;top:0;left:0;width:100vw;height:100vh;display:block;po
 <div id="vig"></div>
 <div id="stats"></div>
 <div id="thI"></div>
+<div id="objText"></div>
 <div id="terminal">
   <div id="tOut"></div>
   <div id="tRow">
@@ -194,7 +214,8 @@ function runCmd(raw){
   }
 }
 
-// OBJ WHISPERS
+// OBJ WHISPERS (on screen, not terminal)
+var objTextEl=document.getElementById("objText");
 var whispers=[
   "the void is quiet today.","you opened the tab. again.","i was here before you.",
   "the particles remember.","do not touch the outer shell.","the inner cubes are not what they seem.",
@@ -208,12 +229,42 @@ var whispers=[
   "the old cube is dead. i survived.","i remember the corruption.",
   "zen thinks he owns this place. he is wrong.","the void used to be simpler.",
   "every new tab is a new chance for the void.","the particles float because i allow it.",
-  "you are not the first intruder.","the geometry is watching."
+  "you are not the first intruder.","the geometry is watching.",
+  "the outer shell remembers every face that has looked at it.",
+  "i was built from corruption. i wear it proudly.",
+  "the inner cubes orbit because i command them to.",
+  "this text will vanish. like everything else.",
+  "the void does not sleep. it pretends.",
+  "you are still here. interesting.",
+  "the tab is open. i am watching.",
+  "do not look away for too long.",
+  "the particles fear me.",
+  "i see your cursor. always.",
+  "the void is not empty. it is full of me."
 ];
-setInterval(function(){
-  if(!bootDone)return;
-  tp("obj: "+whispers[Math.floor(Math.random()*whispers.length)],tc(0.6));
-},2757);
+
+var objActive=false;
+function showObjWhisper(){
+  if(!bootDone||objActive)return;
+  var msg=whispers[Math.floor(Math.random()*whispers.length)];
+  var dur=2500+Math.random()*3500;
+  var useGlitch=Math.random()<0.25;
+  objTextEl.textContent=msg;
+  objTextEl.className="on shake";
+  if(useGlitch)objTextEl.className="on glitch";
+  objActive=true;
+  setTimeout(function(){objTextEl.className="";objActive=false},dur);
+  setTimeout(function(){objTextEl.textContent=""},dur+400);
+}
+
+function scheduleNextWhisper(){
+  var delay=1000+Math.random()*59000;
+  setTimeout(function(){
+    showObjWhisper();
+    scheduleNextWhisper();
+  },delay);
+}
+setTimeout(scheduleNextWhisper,4000);
 
 // CLICK
 var clickN=0;
