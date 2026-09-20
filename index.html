@@ -384,11 +384,7 @@ function render() {
     gl.uniform3fv(uLightColor[li], lightColors[li]);
   }
 
-  // outer shell (semi-transparent)
-  var outerMat = mat4Mul(mat4RotY(time * 0.1), mat4RotX(time * 0.05));
-  drawMesh(cube, outerMat, [0.4, 0.4, 0.4], 0.2, 1.8);
-
-  // inner cubes
+  // inner cubes (draw first, opaque)
   for (var i = 0; i < innerCubes.length; i++) {
     var ic = innerCubes[i];
     var angle = time * ic.speed + ic.phase;
@@ -401,6 +397,12 @@ function render() {
     );
     drawMesh(cube, innerMat, ic.color, 0.9, ic.scale);
   }
+
+  // outer shell (draw last, semi-transparent)
+  gl.depthMask(false);
+  var outerMat = mat4Mul(mat4RotY(time * 0.1), mat4RotX(time * 0.05));
+  drawMesh(cube, outerMat, [0.4, 0.4, 0.4], 0.2, 1.8);
+  gl.depthMask(true);
 }
 
 render();
