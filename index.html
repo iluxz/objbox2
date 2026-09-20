@@ -121,12 +121,14 @@ function fsLs(p){var n=fsGet(p||cwd);if(!n||n.t!=="d")return null;return n.c||[]
 
 // VOID PACKAGES
 var packages={
-interloper:{name:"interloper",v:"1.0",desc:"opens a window into the void",effect:"adds interloper transmission to obj whispers"},
-paranoia:{name:"paranoia",v:"1.2",desc:"the void watches you more closely",effect:"increases obj whisper frequency by 2x"},
-entropy:{name:"entropy",v:"1.0",desc:"increases chaos in the system",effect:"modulates cube time variable with sine wave"},
+entropy:{name:"entropy",v:"1.0",desc:"increases chaos in the system",effect:"modulates cube time with sine wave"},
+spectre:{name:"spectre",v:"1.3",desc:"a ghost haunts the outer shell",effect:"adds random flicker to the outer cube"},
+paranoia:{name:"paranoia",v:"1.2",desc:"the void watches you more closely",effect:"doubles obj whisper frequency"},
 voidscript:{name:"voidscript",v:"2.0",desc:"enables the voidscript language",effect:"allows running scripts in the void"},
-doom:{name:"doom",v:"0.666",desc:"you should not have installed this",effect:"???"},
-interloper2:{name:"interloper2",v:"2.0",desc:"interloper but louder",effect:"doubles interloper frequency"},
+flux:{name:"flux",v:"0.8",desc:"the inner cubes drift off orbit",effect:"adds random offset to inner cube paths"},
+hollow:{name:"hollow",v:"0.1",desc:"something is wrong with the lights",effect:"dims lights and adds random flicker"},
+signal:{name:"signal",v:"3.0",desc:"the signal grows stronger",effect:"adds faint pulsing glow to outer shell"},
+wraith:{name:"wraith",v:"0.5",desc:"you should not have installed this",effect:"???"},
 }
 var installed={entropy:true};
 
