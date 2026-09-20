@@ -17,7 +17,7 @@ canvas#pcv{position:fixed;top:0;left:0;width:100vw;height:100vh;display:block;po
 #tIn{flex:1;background:transparent;border:none;outline:none;color:rgba(43,208,208,0.8);font-family:inherit;font-size:13px;caret-color:rgba(43,208,208,0.8)}
 #stats{position:fixed;top:12px;left:12px;z-index:10;font-size:11px;color:rgba(255,255,255,0.3);pointer-events:none}
 #thI{position:fixed;top:12px;right:12px;z-index:10;font-size:11px;color:rgba(43,208,208,0.4);pointer-events:none;opacity:0;transition:opacity 0.3s}
-#objText{position:fixed;top:0;left:0;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:5;font-size:28px;color:rgba(43,208,208,0.85);text-shadow:0 0 20px rgba(43,208,208,0.4),0 0 40px rgba(43,208,208,0.2);opacity:0;transition:opacity 0.4s;font-family:'Consolas',monospace;letter-spacing:2px;text-align:center;padding:0 40px}
+#objText{position:fixed;pointer-events:none;z-index:5;font-size:28px;color:rgba(43,208,208,0.85);text-shadow:0 0 20px rgba(43,208,208,0.4),0 0 40px rgba(43,208,208,0.2);opacity:0;transition:opacity 0.4s;font-family:'Consolas',monospace;letter-spacing:2px;text-align:center;padding:0 40px;max-width:60vw;line-height:1.4}
 #objText.on{opacity:1}
 #objText.shake{animation:objShake 0.08s infinite}
 #objText.glitch{animation:objGlitch 0.15s infinite}
@@ -250,7 +250,11 @@ function showObjWhisper(){
   var msg=whispers[Math.floor(Math.random()*whispers.length)];
   var dur=2000+Math.random()*3000;
   var useGlitch=Math.random()<0.25;
+  var px=10+Math.random()*75;
+  var py=5+Math.random()*70;
   objTextEl.textContent=msg;
+  objTextEl.style.left=px+"vw";
+  objTextEl.style.top=py+"vh";
   objTextEl.className="on shake";
   if(useGlitch)objTextEl.className="on glitch";
   objActive=true;
