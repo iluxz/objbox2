@@ -307,14 +307,14 @@ window.addEventListener('mousemove', function(e) {
 
 // --- INNER CUBES ---
 var innerCubes = [
-  { color: [1.0, 0.2, 0.2], dist: 1.2, speed: 0.4, phase: 0 },
-  { color: [0.2, 1.0, 0.2], dist: 1.2, speed: 0.5, phase: Math.PI/4 },
-  { color: [0.2, 0.2, 1.0], dist: 1.2, speed: 0.6, phase: Math.PI/2 },
-  { color: [1.0, 1.0, 0.2], dist: 1.2, speed: 0.45, phase: 3*Math.PI/4 },
-  { color: [1.0, 0.2, 1.0], dist: 1.2, speed: 0.55, phase: Math.PI },
-  { color: [0.2, 1.0, 1.0], dist: 1.2, speed: 0.35, phase: 5*Math.PI/4 },
-  { color: [1.0, 0.6, 0.2], dist: 1.2, speed: 0.48, phase: 3*Math.PI/2 },
-  { color: [0.6, 0.2, 1.0], dist: 1.2, speed: 0.52, phase: 7*Math.PI/4 }
+  { color: [1.0, 0.2, 0.2], dist: 0.7, speed: 0.4, phase: 0, scale: 0.15 },
+  { color: [0.2, 1.0, 0.2], dist: 0.7, speed: 0.5, phase: Math.PI/4, scale: 0.15 },
+  { color: [0.2, 0.2, 1.0], dist: 0.7, speed: 0.6, phase: Math.PI/2, scale: 0.15 },
+  { color: [1.0, 1.0, 0.2], dist: 0.7, speed: 0.45, phase: 3*Math.PI/4, scale: 0.15 },
+  { color: [1.0, 0.2, 1.0], dist: 0.7, speed: 0.55, phase: Math.PI, scale: 0.15 },
+  { color: [0.2, 1.0, 1.0], dist: 0.7, speed: 0.35, phase: 5*Math.PI/4, scale: 0.15 },
+  { color: [1.0, 0.6, 0.2], dist: 0.7, speed: 0.48, phase: 3*Math.PI/2, scale: 0.15 },
+  { color: [0.6, 0.2, 1.0], dist: 0.7, speed: 0.52, phase: 7*Math.PI/4, scale: 0.15 }
 ];
 
 // --- LIGHTS ---
@@ -332,7 +332,12 @@ var lightColors = [
 ];
 
 // --- RENDER ---
-function drawMesh(mesh, modelMat, color, alpha) {
+function drawMesh(mesh, modelMat, color, alpha, scale) {
+  if (scale) {
+    var s = mat4Identity();
+    s[0] = scale; s[5] = scale; s[10] = scale;
+    modelMat = mat4Mul(modelMat, s);
+  }
   gl.uniformMatrix4fv(uModel, false, modelMat);
   gl.uniformMatrix3fv(uNormalMat, false, mat3NormalFromMat4(modelMat));
   gl.uniform3fv(uColor, color);
@@ -381,7 +386,7 @@ function render() {
 
   // outer shell (semi-transparent)
   var outerMat = mat4Mul(mat4RotY(time * 0.1), mat4RotX(time * 0.05));
-  drawMesh(cube, outerMat, [0.4, 0.4, 0.4], 0.12);
+  drawMesh(cube, outerMat, [0.4, 0.4, 0.4], 0.12, 1.8);
 
   // inner cubes
   for (var i = 0; i < innerCubes.length; i++) {
@@ -394,7 +399,7 @@ function render() {
       mat4Translate(ix, iy, iz),
       mat4Mul(mat4RotY(time * 1.5 + i), mat4RotX(time * 0.8 + i))
     );
-    drawMesh(cube, innerMat, ic.color, 0.9);
+    drawMesh(cube, innerMat, ic.color, 0.9, ic.scale);
   }
 }
 
