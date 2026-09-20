@@ -147,7 +147,7 @@ var fsSource = [
   '    float diff = max(dot(n, lDir), 0.0);',
   '    totalLight += uLightColor[i] * diff;',
   '  }',
-  '  vec3 ambient = uColor * 0.15;',
+  '  vec3 ambient = uColor * 0.3;',
   '  vec3 result = ambient + uColor * totalLight;',
   '  gl_FragColor = vec4(result, uAlpha);',
   '}'
@@ -307,14 +307,14 @@ window.addEventListener('mousemove', function(e) {
 
 // --- INNER CUBES ---
 var innerCubes = [
-  { color: [1.0, 0.2, 0.2], dist: 0.7, speed: 0.4, phase: 0, scale: 0.15 },
-  { color: [0.2, 1.0, 0.2], dist: 0.7, speed: 0.5, phase: Math.PI/4, scale: 0.15 },
-  { color: [0.2, 0.2, 1.0], dist: 0.7, speed: 0.6, phase: Math.PI/2, scale: 0.15 },
-  { color: [1.0, 1.0, 0.2], dist: 0.7, speed: 0.45, phase: 3*Math.PI/4, scale: 0.15 },
-  { color: [1.0, 0.2, 1.0], dist: 0.7, speed: 0.55, phase: Math.PI, scale: 0.15 },
-  { color: [0.2, 1.0, 1.0], dist: 0.7, speed: 0.35, phase: 5*Math.PI/4, scale: 0.15 },
-  { color: [1.0, 0.6, 0.2], dist: 0.7, speed: 0.48, phase: 3*Math.PI/2, scale: 0.15 },
-  { color: [0.6, 0.2, 1.0], dist: 0.7, speed: 0.52, phase: 7*Math.PI/4, scale: 0.15 }
+  { color: [1.0, 0.2, 0.2], dist: 0.65, speed: 0.4, phase: 0, scale: 0.25 },
+  { color: [0.2, 1.0, 0.2], dist: 0.65, speed: 0.5, phase: Math.PI/4, scale: 0.25 },
+  { color: [0.2, 0.2, 1.0], dist: 0.65, speed: 0.6, phase: Math.PI/2, scale: 0.25 },
+  { color: [1.0, 1.0, 0.2], dist: 0.65, speed: 0.45, phase: 3*Math.PI/4, scale: 0.25 },
+  { color: [1.0, 0.2, 1.0], dist: 0.65, speed: 0.55, phase: Math.PI, scale: 0.25 },
+  { color: [0.2, 1.0, 1.0], dist: 0.65, speed: 0.35, phase: 5*Math.PI/4, scale: 0.25 },
+  { color: [1.0, 0.6, 0.2], dist: 0.65, speed: 0.48, phase: 3*Math.PI/2, scale: 0.25 },
+  { color: [0.6, 0.2, 1.0], dist: 0.65, speed: 0.52, phase: 7*Math.PI/4, scale: 0.25 }
 ];
 
 // --- LIGHTS ---
@@ -386,7 +386,7 @@ function render() {
 
   // outer shell (semi-transparent)
   var outerMat = mat4Mul(mat4RotY(time * 0.1), mat4RotX(time * 0.05));
-  drawMesh(cube, outerMat, [0.4, 0.4, 0.4], 0.12, 1.8);
+  drawMesh(cube, outerMat, [0.4, 0.4, 0.4], 0.2, 1.8);
 
   // inner cubes
   for (var i = 0; i < innerCubes.length; i++) {
