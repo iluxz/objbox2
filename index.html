@@ -244,27 +244,32 @@ var whispers=[
 ];
 
 var objActive=false;
+var objTimer=null;
 function showObjWhisper(){
   if(!bootDone||objActive)return;
   var msg=whispers[Math.floor(Math.random()*whispers.length)];
-  var dur=2500+Math.random()*3500;
+  var dur=2000+Math.random()*3000;
   var useGlitch=Math.random()<0.25;
   objTextEl.textContent=msg;
   objTextEl.className="on shake";
   if(useGlitch)objTextEl.className="on glitch";
   objActive=true;
-  setTimeout(function(){objTextEl.className="";objActive=false},dur);
-  setTimeout(function(){objTextEl.textContent=""},dur+400);
+  clearTimeout(objTimer);
+  objTimer=setTimeout(function(){
+    objTextEl.className="";
+    objTextEl.style.opacity="0";
+    setTimeout(function(){objTextEl.textContent="";objTextEl.style.opacity="";objActive=false},500);
+  },dur);
 }
 
 function scheduleNextWhisper(){
-  var delay=1000+Math.random()*59000;
-  setTimeout(function(){
+  var delay=1000+Math.random()*9000;
+  objTimer=setTimeout(function(){
     showObjWhisper();
     scheduleNextWhisper();
   },delay);
 }
-setTimeout(scheduleNextWhisper,4000);
+setTimeout(scheduleNextWhisper,3500);
 
 // CLICK
 var clickN=0;
