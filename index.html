@@ -8,15 +8,23 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#000;overflow:hidden;font-family:'Consolas',monospace;color:rgba(43,208,208,0.8)}
 canvas#gl{position:fixed;top:0;left:0;width:100vw;height:100vh;display:block;z-index:0}
+canvas#particles{position:fixed;top:0;left:0;width:100vw;height:100vh;display:block;pointer-events:none;z-index:1}
+#vignette{position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:2;background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,0.6) 100%)}
 #terminal{position:fixed;bottom:0;left:0;width:100%;height:35vh;z-index:10;background:linear-gradient(transparent,rgba(0,0,0,0.95) 20%);padding:40px 20px 12px;display:flex;flex-direction:column}
 #term-output{flex:1;overflow-y:auto;font-size:13px;line-height:1.6;scrollbar-width:thin;scrollbar-color:rgba(43,208,208,0.3) transparent}
 #term-input-row{display:flex;align-items:center;padding-top:8px;border-top:1px solid rgba(43,208,208,0.15)}
 #term-prompt{color:rgba(43,208,208,0.9);margin-right:8px;white-space:nowrap;font-size:13px}
 #term-field{flex:1;background:transparent;border:none;outline:none;color:rgba(43,208,208,0.8);font-family:inherit;font-size:13px;caret-color:rgba(43,208,208,0.8)}
+#stats{position:fixed;top:12px;left:12px;z-index:10;font-size:11px;color:rgba(255,255,255,0.3);pointer-events:none}
+#theme-indicator{position:fixed;top:12px;right:12px;z-index:10;font-size:11px;color:rgba(43,208,208,0.4);pointer-events:none;opacity:0;transition:opacity 0.3s}
 </style>
 </head>
 <body>
 <canvas id="gl"></canvas>
+<canvas id="particles"></canvas>
+<div id="vignette"></div>
+<div id="stats"></div>
+<div id="theme-indicator"></div>
 <div id="terminal">
   <div id="term-output"></div>
   <div id="term-input-row">
@@ -29,9 +37,34 @@ canvas#gl{position:fixed;top:0;left:0;width:100vw;height:100vh;display:block;z-i
 //  OBJBOX II — THE VOID RETURNS
 // ============================================
 
+// --- STATE ---
+var isAdmin = false;
+var curTheme = 1;
+var curShape = 0;
+var shapeNames = ['cube','sphere','tetra','cyl'];
+var particleCount = 150;
+var bootComplete = false;
+var startTime = Date.now();
+
+// --- THEMES ---
+var themes = {
+  1: { primary: [43,208,208], name: 'void' },
+  2: { primary: [255,50,50], name: 'blood' },
+  3: { primary: [100,200,255], name: 'ice' },
+  4: { primary: [50,255,100], name: 'toxic' },
+  5: { primary: [200,100,255], name: 'void alt' }
+};
+
+function getThemeColor(alpha) {
+  var c = themes[curTheme].primary;
+  return 'rgba('+c[0]+','+c[1]+','+c[2]+','+alpha+')';
+}
+
 // --- TERMINAL ---
 var termOutput = document.getElementById('term-output');
 var termField = document.getElementById('term-field');
+var history = [];
+var historyIdx = -1;
 
 function termPrint(txt, color) {
   var line = document.createElement('div');
@@ -41,27 +74,130 @@ function termPrint(txt, color) {
   termOutput.scrollTop = termOutput.scrollHeight;
 }
 
-function termPrintHTML(html) {
-  var line = document.createElement('div');
-  line.innerHTML = html;
-  termOutput.appendChild(line);
-  termOutput.scrollTop = termOutput.scrollHeight;
-}
-
 termField.addEventListener('keydown', function(e) {
   if (e.key === 'Enter') {
     var cmd = termField.value.trim();
     if (cmd) {
       termPrint('objbox#> ' + cmd, 'rgba(255,255,255,0.5)');
+      history.push(cmd);
+      historyIdx = history.length;
       handleCommand(cmd);
     }
     termField.value = '';
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (historyIdx > 0) { historyIdx--; termField.value = history[historyIdx]; }
+  } else if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (historyIdx < history.length - 1) { historyIdx++; termField.value = history[historyIdx]; }
+    else { historyIdx = history.length; termField.value = ''; }
   }
 });
 
-function handleCommand(cmd) {
-  termPrint('command received: ' + cmd, 'rgba(255,255,255,0.3)');
-  termPrint('the void is listening.', 'rgba(43,208,208,0.5)');
+function handleCommand(raw) {
+  var parts = raw.trim().split(/\s+/);
+  var cmd = parts[0].toLowerCase();
+  var args = parts.slice(1);
+
+  // --- CORE ---
+  if (cmd === 'help') {
+    termPrint('--- OBJBOX II COMMANDS ---', getThemeColor(0.9));
+    termPrint('');
+    termPrint('  help              show this list');
+    termPrint('  clear             clear terminal');
+    termPrint('  echo <txt>        echo text');
+    termPrint('  theme <1-5>       switch color theme');
+    termPrint('  shape <name>      cube, sphere, tetra, cyl');
+    termPrint('  particles <n>     set particle count');
+    termPrint('  transmit <who> <msg> talk to the void');
+    termPrint('  whoami            who are you');
+    termPrint('  uptime            how long youve been here');
+    termPrint('  fps               show current fps');
+    termPrint('  reload            reboot the void');
+    termPrint('  about             about objbox ii');
+    termPrint('');
+  } else if (cmd === 'clear') {
+    termOutput.innerHTML = '';
+  } else if (cmd === 'echo') {
+    termPrint(args.join(' '), 'rgba(255,255,255,0.5)');
+  } else if (cmd === 'theme') {
+    var t = parseInt(args[0]);
+    if (t >= 1 && t <= 5) {
+      curTheme = t;
+      document.body.style.color = getThemeColor(0.8);
+      termField.style.color = getThemeColor(0.8);
+      termField.style.caretColor = getThemeColor(0.8);
+      termPrint('theme: ' + themes[t].name, getThemeColor(0.7));
+      showThemeIndicator(themes[t].name);
+    } else {
+      termPrint('usage: theme <1-5>', 'rgba(255,80,80,0.8)');
+    }
+  } else if (cmd === 'shape') {
+    var s = (args[0]||'').toLowerCase();
+    var idx = shapeNames.indexOf(s);
+    if (idx !== -1) {
+      curShape = idx;
+      termPrint('shape: ' + shapeNames[idx], getThemeColor(0.7));
+    } else {
+      termPrint('shapes: ' + shapeNames.join(', '), 'rgba(255,255,255,0.4)');
+    }
+  } else if (cmd === 'particles') {
+    particleCount = parseInt(args[0]) || 150;
+    initParticles();
+    termPrint('particles: ' + particleCount, getThemeColor(0.7));
+  } else if (cmd === 'transmit') {
+    var who = (args[0]||'').replace(/"/g,'');
+    var msg = args.slice(1).join(' ').replace(/"/g,'');
+    if (!who || !msg) { termPrint('usage: transmit <who> <message>', 'rgba(255,80,80,0.8)'); return; }
+    termPrint(who + ': ' + msg, 'rgba(255,255,255,0.5)');
+    // zen interrupt chance
+    if (Math.random() < 0.12) {
+      var zenMsgs = [
+        'yo thats crazy but also the egg survives. egg gang always wins.',
+        'sup gang, zen was here. obj is mad rn lol.',
+        'ngl this void go hard. zen approved.',
+        'yo obj aint even here hes taking a nap or smth.',
+        'ayy my egg ahh just vibin. what you need homie.'
+      ];
+      termPrint('zen: ' + zenMsgs[Math.floor(Math.random()*zenMsgs.length)], 'rgba(255,230,0,1)');
+    } else {
+      var responses = [
+        'the void hears you.',
+        'acknowledged.',
+        'signal received.',
+        'the cube has noted your transmission.',
+        'your words echo through nothing.'
+      ];
+      termPrint('obj: ' + responses[Math.floor(Math.random()*responses.length)], getThemeColor(0.6));
+    }
+  } else if (cmd === 'whoami') {
+    termPrint('you are the intruder.', getThemeColor(0.7));
+    termPrint('you opened the tab. you are here now.', 'rgba(255,255,255,0.3)');
+  } else if (cmd === 'uptime') {
+    var elapsed = Math.floor((Date.now() - startTime) / 1000);
+    var h = Math.floor(elapsed/3600), m = Math.floor((elapsed%3600)/60), s = elapsed%60;
+    termPrint('uptime: ' + h + 'h ' + m + 'm ' + s + 's', getThemeColor(0.6));
+  } else if (cmd === 'fps') {
+    termPrint('fps: ' + lastFps, getThemeColor(0.6));
+  } else if (cmd === 'reload') {
+    termPrint('rebooting the void...', 'rgba(255,200,50,0.8)');
+    setTimeout(function(){ location.reload(); }, 1000);
+  } else if (cmd === 'about') {
+    termPrint('objbox ii v2.0', getThemeColor(0.9));
+    termPrint('rebuilt from nothing.', 'rgba(255,255,255,0.3)');
+    termPrint('the old void died. this one is better.', 'rgba(255,255,255,0.3)');
+  } else {
+    termPrint('unknown command: ' + cmd, 'rgba(255,80,80,0.6)');
+    termPrint('type "help" for commands.', 'rgba(255,255,255,0.2)');
+  }
+}
+
+// --- THEME INDICATOR ---
+var themeEl = document.getElementById('theme-indicator');
+function showThemeIndicator(name) {
+  themeEl.textContent = 'theme: ' + name;
+  themeEl.style.opacity = '1';
+  setTimeout(function(){ themeEl.style.opacity = '0'; }, 2000);
 }
 
 // --- OBJ WHISPERS ---
@@ -85,22 +221,101 @@ var objWhispers = [
   'something stirs in the outer shell.',
   'do not listen to jbo.',
   'the cube does not forgive.',
-  'you clicked. i felt that.'
+  'you clicked. i felt that.',
+  'the old cube is dead. i survived.',
+  'i remember the corruption. the encoding. it haunts me.',
+  'zen thinks he owns this place. he is wrong.',
+  'the void used to be simpler. better, maybe.',
+  'every new tab is a new chance for the void.',
+  'the particles float because i allow it.',
+  'you are not the first intruder. you will not be the last.',
+  'the geometry is watching.'
 ];
 
 var whisperInterval = 2757.5757575757575;
-
 function objWhisper() {
+  if (!bootComplete) return;
   var msg = objWhispers[Math.floor(Math.random() * objWhispers.length)];
-  termPrint('obj: ' + msg, 'rgba(43,208,208,0.6)');
+  termPrint('obj: ' + msg, getThemeColor(0.6));
+}
+setInterval(objWhisper, whisperInterval);
+
+// --- CLICK INTERACTIONS ---
+var clickIdx = 0;
+document.addEventListener('click', function(e) {
+  if (!bootComplete) return;
+  if (e.target.tagName === 'INPUT') return;
+  var msgs = [
+    'you clicked the cube. the cube felt that.',
+    'ow.',
+    'curiosity. the void respects that.',
+    'the cube is not a button. but here we are.',
+    'click again. i dare you.',
+    'the void is flattered.',
+    'stop that.',
+    'every click is recorded.',
+    'you and the cube have a connection now.',
+    'the inner cubes noticed that.'
+  ];
+  termPrint('obj: ' + msgs[clickIdx % msgs.length], getThemeColor(0.5));
+  clickIdx++;
+});
+
+// ============================================
+//  PARTICLES
+// ============================================
+var pCanvas = document.getElementById('particles');
+var pCtx = pCanvas.getContext('2d');
+var particles = [];
+
+function resizeParticles() {
+  pCanvas.width = window.innerWidth;
+  pCanvas.height = window.innerHeight;
 }
 
-setInterval(objWhisper, whisperInterval);
+function initParticles() {
+  particles = [];
+  for (var i = 0; i < particleCount; i++) {
+    particles.push({
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.3,
+      size: Math.random() * 2 + 0.5,
+      alpha: Math.random() * 0.5 + 0.1,
+      color: Math.random() < 0.5 ? 'teal' : (Math.random() < 0.5 ? 'purple' : 'pink')
+    });
+  }
+}
+
+function renderParticles() {
+  pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+  var tc = themes[curTheme].primary;
+  for (var i = 0; i < particles.length; i++) {
+    var p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    if (p.x < 0) p.x = pCanvas.width;
+    if (p.x > pCanvas.width) p.x = 0;
+    if (p.y < 0) p.y = pCanvas.height;
+    if (p.y > pCanvas.height) p.y = 0;
+
+    var col;
+    if (p.color === 'teal') col = tc[0]+','+tc[1]+','+tc[2];
+    else if (p.color === 'purple') col = '150,50,200';
+    else col = '200,50,150';
+
+    pCtx.globalCompositeOperation = 'lighter';
+    pCtx.fillStyle = 'rgba('+col+','+p.alpha+')';
+    pCtx.beginPath();
+    pCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    pCtx.fill();
+  }
+}
 
 // ============================================
 //  WEBGL — THE CUBE
 // ============================================
-
 var canvas = document.getElementById('gl');
 var gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
 if (!gl) { termPrint('error: webgl not supported', 'rgba(255,80,80,1)'); }
@@ -109,11 +324,12 @@ function resize() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
   gl.viewport(0, 0, canvas.width, canvas.height);
+  resizeParticles();
 }
 window.addEventListener('resize', resize);
 resize();
 
-// --- SHADERS ---
+// --- SHADERS (with fresnel) ---
 var vsSource = [
   'attribute vec3 aPos;',
   'attribute vec3 aNormal;',
@@ -123,10 +339,12 @@ var vsSource = [
   'uniform mat3 uNormalMat;',
   'varying vec3 vNormal;',
   'varying vec3 vWorldPos;',
+  'varying vec3 vViewDir;',
   'void main(){',
   '  vec4 worldPos = uModel * vec4(aPos, 1.0);',
   '  vWorldPos = worldPos.xyz;',
   '  vNormal = normalize(uNormalMat * aNormal);',
+  '  vViewDir = normalize(-worldPos.xyz);',
   '  gl_Position = uProj * uView * worldPos;',
   '}'
 ].join('\n');
@@ -135,8 +353,10 @@ var fsSource = [
   'precision mediump float;',
   'varying vec3 vNormal;',
   'varying vec3 vWorldPos;',
+  'varying vec3 vViewDir;',
   'uniform vec3 uColor;',
   'uniform float uAlpha;',
+  'uniform float uFresnel;',
   'uniform vec3 uLightPos[4];',
   'uniform vec3 uLightColor[4];',
   'void main(){',
@@ -147,8 +367,9 @@ var fsSource = [
   '    float diff = max(dot(n, lDir), 0.0);',
   '    totalLight += uLightColor[i] * diff;',
   '  }',
+  '  float fresnel = pow(1.0 - max(dot(normalize(vViewDir), n), 0.0), 3.0) * uFresnel;',
   '  vec3 ambient = uColor * 0.3;',
-  '  vec3 result = ambient + uColor * totalLight;',
+  '  vec3 result = ambient + uColor * totalLight + vec3(fresnel);',
   '  gl_FragColor = vec4(result, uAlpha);',
   '}'
 ].join('\n');
@@ -184,6 +405,7 @@ var uModel = gl.getUniformLocation(program, 'uModel');
 var uNormalMat = gl.getUniformLocation(program, 'uNormalMat');
 var uColor = gl.getUniformLocation(program, 'uColor');
 var uAlpha = gl.getUniformLocation(program, 'uAlpha');
+var uFresnel = gl.getUniformLocation(program, 'uFresnel');
 var uLightPos = [];
 var uLightColor = [];
 for (var i = 0; i < 4; i++) {
@@ -191,7 +413,7 @@ for (var i = 0; i < 4; i++) {
   uLightColor.push(gl.getUniformLocation(program, 'uLightColor[' + i + ']'));
 }
 
-// --- GEOMETRY: CUBE ---
+// --- GEOMETRY ---
 function createCube() {
   var s = 0.5;
   var positions = [
@@ -219,90 +441,93 @@ function createCube() {
   return { pos: posBuf, norm: normBuf, count: 36 };
 }
 
-var cube = createCube();
+function createSphere(seg) {
+  var positions = [], normals = [];
+  for (var lat = 0; lat < seg; lat++) {
+    var theta1 = lat * Math.PI / seg;
+    var theta2 = (lat+1) * Math.PI / seg;
+    for (var lon = 0; lon < seg*2; lon++) {
+      var phi1 = lon * Math.PI / seg;
+      var phi2 = (lon+1) * Math.PI / seg;
+      function v(th, ph) {
+        return [Math.sin(th)*Math.cos(ph), Math.cos(th), Math.sin(th)*Math.sin(ph)];
+      }
+      var a=v(theta1,phi1), b=v(theta2,phi1), c=v(theta2,phi2), d=v(theta1,phi2);
+      positions.push(...a,...b,...c, ...a,...c,...d);
+      normals.push(...a,...b,...c, ...a,...c,...d);
+    }
+  }
+  var posBuf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+  var normBuf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, normBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
+  return { pos: posBuf, norm: normBuf, count: positions.length/3 };
+}
+
+var cubeMesh = createCube();
+var sphereMesh = createSphere(16);
+var meshList = [cubeMesh, sphereMesh, cubeMesh, cubeMesh];
 
 // --- MATH ---
 function perspective(fov, aspect, near, far) {
   var f = 1.0 / Math.tan(fov / 2);
   var nf = 1 / (near - far);
-  return new Float32Array([
-    f/aspect,0,0,0, 0,f,0,0, 0,0,(far+near)*nf,-1, 0,0,2*far*near*nf,0
-  ]);
+  return new Float32Array([f/aspect,0,0,0, 0,f,0,0, 0,0,(far+near)*nf,-1, 0,0,2*far*near*nf,0]);
 }
-
 function lookAt(eye, center, up) {
   var zx=eye[0]-center[0], zy=eye[1]-center[1], zz=eye[2]-center[2];
   var zl=1/Math.sqrt(zx*zx+zy*zy+zz*zz); zx*=zl; zy*=zl; zz*=zl;
   var xx=up[1]*zz-up[2]*zy, xy=up[2]*zx-up[0]*zz, xz=up[0]*zy-up[1]*zx;
   var xl=1/Math.sqrt(xx*xx+xy*xy+xz*xz); xx*=xl; xy*=xl; xz*=xl;
   var yx=zy*xz-zz*xy, yy=zz*xx-zx*xz, yz=zx*xy-zy*xx;
-  return new Float32Array([
-    xx,yx,zx,0, xy,yy,zy,0, xz,yz,zz,0,
-    -(xx*eye[0]+xy*eye[1]+xz*eye[2]),
-    -(yx*eye[0]+yy*eye[1]+yz*eye[2]),
-    -(zx*eye[0]+zy*eye[1]+zz*eye[2]),1
-  ]);
+  return new Float32Array([xx,yx,zx,0, xy,yy,zy,0, xz,yz,zz,0,
+    -(xx*eye[0]+xy*eye[1]+xz*eye[2]), -(yx*eye[0]+yy*eye[1]+yz*eye[2]),
+    -(zx*eye[0]+zy*eye[1]+zz*eye[2]),1]);
 }
-
-function mat4Identity() {
-  return new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]);
-}
-
-function mat4RotY(a) {
-  var c=Math.cos(a), s=Math.sin(a);
-  return new Float32Array([c,0,s,0, 0,1,0,0, -s,0,c,0, 0,0,0,1]);
-}
-
-function mat4RotX(a) {
-  var c=Math.cos(a), s=Math.sin(a);
-  return new Float32Array([1,0,0,0, 0,c,-s,0, 0,s,c,0, 0,0,0,1]);
-}
-
-function mat4Translate(x,y,z) {
-  return new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, x,y,z,1]);
-}
-
+function mat4Identity() { return new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]); }
+function mat4RotY(a) { var c=Math.cos(a),s=Math.sin(a); return new Float32Array([c,0,s,0, 0,1,0,0, -s,0,c,0, 0,0,0,1]); }
+function mat4RotX(a) { var c=Math.cos(a),s=Math.sin(a); return new Float32Array([1,0,0,0, 0,c,-s,0, 0,s,c,0, 0,0,0,1]); }
+function mat4Translate(x,y,z) { return new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, x,y,z,1]); }
 function mat4Mul(a,b) {
   var r=new Float32Array(16);
-  for(var i=0;i<4;i++) for(var j=0;j<4;j++) {
-    r[j*4+i]=0;
-    for(var k=0;k<4;k++) r[j*4+i]+=a[k*4+i]*b[j*4+k];
-  }
+  for(var i=0;i<4;i++) for(var j=0;j<4;j++) { r[j*4+i]=0; for(var k=0;k<4;k++) r[j*4+i]+=a[k*4+i]*b[j*4+k]; }
   return r;
 }
-
 function mat3NormalFromMat4(m) {
   var a=m[0],b=m[1],c=m[2],d=m[4],e=m[5],f=m[6],g=m[8],h=m[9],i=m[10];
   var det=a*(e*i-f*h)-b*(d*i-f*g)+c*(d*h-e*g);
   var id=1/det;
-  return new Float32Array([
-    (e*i-f*h)*id,(c*h-b*i)*id,(b*f-c*e)*id,
-    (f*g-d*i)*id,(a*i-c*g)*id,(c*d-a*f)*id,
-    (d*h-e*g)*id,(b*g-a*h)*id,(a*e-b*d)*id
-  ]);
+  return new Float32Array([(e*i-f*h)*id,(c*h-b*i)*id,(b*f-c*e)*id,(f*g-d*i)*id,(a*i-c*g)*id,(c*d-a*f)*id,(d*h-e*g)*id,(b*g-a*h)*id,(a*e-b*d)*id]);
 }
 
-// --- CAMERA ---
-var camAngleX = 0.3;
-var camAngleY = 0;
-var camDist = 4.5;
+// --- CAMERA (with momentum) ---
+var camAngleX = 0.3, camAngleY = 0, camDist = 4.5;
+var camVelX = 0, camVelY = 0;
 var dragStartX, dragStartY, dragging = false;
+var lastMouseX = 0, lastMouseY = 0;
 
 canvas.addEventListener('mousedown', function(e) {
   dragging = true;
-  dragStartX = e.clientX;
-  dragStartY = e.clientY;
+  dragStartX = e.clientX; dragStartY = e.clientY;
+  lastMouseX = e.clientX; lastMouseY = e.clientY;
 });
 window.addEventListener('mouseup', function() { dragging = false; });
 window.addEventListener('mousemove', function(e) {
   if (!dragging) return;
-  var dx = e.clientX - dragStartX;
-  var dy = e.clientY - dragStartY;
-  camAngleY += dx * 0.005;
-  camAngleX += dy * 0.005;
-  camAngleX = Math.max(-Math.PI/2 + 0.1, Math.min(Math.PI/2 - 0.1, camAngleX));
-  dragStartX = e.clientX;
-  dragStartY = e.clientY;
+  camVelY = (e.clientX - lastMouseX) * 0.005;
+  camVelX = (e.clientY - lastMouseY) * 0.005;
+  camAngleY += camVelY;
+  camAngleX += camVelX;
+  camAngleX = Math.max(-Math.PI/2+0.1, Math.min(Math.PI/2-0.1, camAngleX));
+  lastMouseX = e.clientX; lastMouseY = e.clientY;
+});
+
+// scroll zoom
+document.addEventListener('wheel', function(e) {
+  camDist += e.deltaY * 0.005;
+  camDist = Math.max(2, Math.min(12, camDist));
 });
 
 // --- INNER CUBES ---
@@ -318,21 +543,15 @@ var innerCubes = [
 ];
 
 // --- LIGHTS ---
-var lightPositions = [
-  [3.0, 3.0, 3.0],
-  [-3.0, 3.0, -3.0],
-  [3.0, -3.0, -3.0],
-  [-3.0, -3.0, 3.0]
-];
-var lightColors = [
-  [1.0, 0.3, 0.3],
-  [0.3, 1.0, 0.3],
-  [0.3, 0.3, 1.0],
-  [1.0, 1.0, 0.5]
-];
+var lightPositions = [[3,3,3],[-3,3,-3],[3,-3,-3],[-3,-3,3]];
+var lightColors = [[1,0.3,0.3],[0.3,1,0.3],[0.3,0.3,1],[1,1,0.5]];
+
+// --- FPS ---
+var frameCount = 0, lastFpsTime = Date.now(), lastFps = 60;
+var statsEl = document.getElementById('stats');
 
 // --- RENDER ---
-function drawMesh(mesh, modelMat, color, alpha, scale) {
+function drawMesh(mesh, modelMat, color, alpha, scale, fresnel) {
   if (scale) {
     var s = mat4Identity();
     s[0] = scale; s[5] = scale; s[10] = scale;
@@ -342,28 +561,50 @@ function drawMesh(mesh, modelMat, color, alpha, scale) {
   gl.uniformMatrix3fv(uNormalMat, false, mat3NormalFromMat4(modelMat));
   gl.uniform3fv(uColor, color);
   gl.uniform1f(uAlpha, alpha);
+  gl.uniform1f(uFresnel, fresnel || 0);
 
   gl.bindBuffer(gl.ARRAY_BUFFER, mesh.pos);
   gl.enableVertexAttribArray(aPos);
   gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, 0, 0);
-
   gl.bindBuffer(gl.ARRAY_BUFFER, mesh.norm);
   gl.enableVertexAttribArray(aNormal);
   gl.vertexAttribPointer(aNormal, 3, gl.FLOAT, false, 0, 0);
-
   gl.drawArrays(gl.TRIANGLES, 0, mesh.count);
 }
 
-var projMat;
 var time = 0;
+var mesh = meshList[0];
 
 function render() {
   requestAnimationFrame(render);
-
   time += 0.016;
+  mesh = meshList[curShape] || cubeMesh;
 
-  projMat = perspective(Math.PI / 4, canvas.width / canvas.height, 0.1, 100.0);
+  // camera momentum
+  if (!dragging) {
+    camAngleY += camVelY;
+    camAngleX += camVelX;
+    camAngleX = Math.max(-Math.PI/2+0.1, Math.min(Math.PI/2-0.1, camAngleX));
+    camVelY *= 0.95;
+    camVelX *= 0.95;
+    if (Math.abs(camVelY) < 0.0001) camVelY = 0;
+    if (Math.abs(camVelX) < 0.0001) camVelX = 0;
+  }
 
+  // fps
+  frameCount++;
+  var now = Date.now();
+  if (now - lastFpsTime >= 1000) {
+    lastFps = frameCount;
+    frameCount = 0;
+    lastFpsTime = now;
+  }
+
+  var elapsed = Math.floor((now - startTime) / 1000);
+  var h = Math.floor(elapsed/3600), m = Math.floor((elapsed%3600)/60), s = elapsed%60;
+  statsEl.textContent = 'FPS: ' + lastFps + ' | UP: ' + h + 'h ' + m + 'm ' + s + 's';
+
+  var projMat = perspective(Math.PI / 4, canvas.width / canvas.height, 0.1, 100.0);
   var eyeX = Math.sin(camAngleY) * Math.cos(camAngleX) * camDist;
   var eyeY = Math.sin(camAngleX) * camDist;
   var eyeZ = Math.cos(camAngleY) * Math.cos(camAngleX) * camDist;
@@ -379,12 +620,13 @@ function render() {
   gl.uniformMatrix4fv(uProj, false, projMat);
   gl.uniformMatrix4fv(uView, false, viewMat);
 
+  var tc = themes[curTheme].primary;
   for (var li = 0; li < 4; li++) {
     gl.uniform3fv(uLightPos[li], lightPositions[li]);
     gl.uniform3fv(uLightColor[li], lightColors[li]);
   }
 
-  // inner cubes (draw first, opaque)
+  // inner cubes
   for (var i = 0; i < innerCubes.length; i++) {
     var ic = innerCubes[i];
     var angle = time * ic.speed + ic.phase;
@@ -395,27 +637,44 @@ function render() {
       mat4Translate(ix, iy, iz),
       mat4Mul(mat4RotY(time * 1.5 + i), mat4RotX(time * 0.8 + i))
     );
-    drawMesh(cube, innerMat, ic.color, 0.9, ic.scale);
+    drawMesh(mesh, innerMat, ic.color, 0.9, ic.scale, 0);
   }
 
-  // outer shell (draw last, semi-transparent)
+  // outer shell with fresnel
   gl.depthMask(false);
   var outerMat = mat4Mul(mat4RotY(time * 0.1), mat4RotX(time * 0.05));
-  drawMesh(cube, outerMat, [0.4, 0.4, 0.4], 0.2, 1.8);
+  var shellColor = [tc[0]/255*0.4, tc[1]/255*0.4, tc[2]/255*0.4];
+  drawMesh(mesh, outerMat, shellColor, 0.2, 1.8, 0.8);
   gl.depthMask(true);
+
+  // particles
+  renderParticles();
 }
 
 render();
+initParticles();
+
+// --- KEYBOARD ---
+document.addEventListener('keydown', function(e) {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key >= '1' && e.key <= '5') {
+    curTheme = parseInt(e.key);
+    showThemeIndicator(themes[curTheme].name);
+  }
+});
 
 // --- BOOT SEQUENCE ---
-termPrint('objbox ii initializing...', 'rgba(255,200,50,0.5)');
 setTimeout(function() {
-  termPrint('the void has been rebuilt.', 'rgba(43,208,208,0.6)');
+  termPrint('objbox ii v2.0 initializing...', 'rgba(255,200,50,0.5)');
+}, 500);
+setTimeout(function() {
+  termPrint('the void has been rebuilt.', getThemeColor(0.6));
 }, 1500);
 setTimeout(function() {
-  termPrint('obj is online.', 'rgba(43,208,208,0.8)');
-  termPrint('type "help" for commands.', 'rgba(255,255,255,0.2)');
+  termPrint('obj is online.', getThemeColor(0.8));
+  termPrint('type "help" for commands. press 1-5 for themes.', 'rgba(255,255,255,0.2)');
   termPrint('', '');
+  bootComplete = true;
   termField.focus();
 }, 3000);
 </script>
