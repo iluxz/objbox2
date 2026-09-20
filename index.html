@@ -365,7 +365,7 @@ document.addEventListener("click",function(e){if(!bootDone||e.target.tagName==="
 // PARTICLES
 var pCvs=document.getElementById("pcv"),pCtx=pCvs.getContext("2d"),parts=[];
 function resizeP(){pCvs.width=window.innerWidth;pCvs.height=window.innerHeight}
-function initP(){parts=[];for(var i=0;i<particleCount;i++)parts.push({x:Math.random()*window.innerWidth,y:Math.random()*window.innerHeight,vx:(Math.random()-0.5)*0.3,vy:(Math.random()-0.5)*0.3,sz:Math.random()*2+0.5,a:Math.random()*0.5+0.1,c:Math.random()<0.5?"t":(Math.random()<0.5?"p":"q")})}
+function initP(){parts=[];for(var i=0;i<particleCount;i++)parts.push({x:Math.random()*window.innerWidth,y:Math.random()*window.innerHeight,vx:(Math.random()-0.5)*0.3,vy:(Math.random()-0.5)*0.3,sz:Math.random()*3+1.5,a:Math.random()*0.6+0.2,c:Math.random()<0.5?"t":(Math.random()<0.5?"p":"q")})}
 function drawP(){pCtx.clearRect(0,0,pCvs.width,pCvs.height);var tc2=themes[curTheme].p;pCtx.globalCompositeOperation="lighter";for(var i=0;i<parts.length;i++){var pp=parts[i];pp.x+=pp.vx;pp.y+=pp.vy;if(pp.x<0)pp.x=pCvs.width;if(pp.x>pCvs.width)pp.x=0;if(pp.y<0)pp.y=pCvs.height;if(pp.y>pCvs.height)pp.y=0;var col;if(pp.c==="t")col=tc2[0]+","+tc2[1]+","+tc2[2];else if(pp.c==="p")col="150,50,200";else col="200,50,150";pCtx.globalAlpha=pp.a;pCtx.fillStyle="rgba("+col+",1)";pCtx.beginPath();pCtx.arc(pp.x,pp.y,pp.sz,0,Math.PI*2);pCtx.fill()}pCtx.globalCompositeOperation="source-over";pCtx.globalAlpha=1}
 
 // WEBGL
@@ -385,7 +385,7 @@ function mkS(ctx,type,src){var s=ctx.createShader(type);ctx.shaderSource(s,src);
 function mkP(ctx,vs,fs){var p=ctx.createProgram();ctx.attachShader(p,mkS(ctx,ctx.VERTEX_SHADER,vs));ctx.attachShader(p,mkS(ctx,ctx.FRAGMENT_SHADER,fs));ctx.linkProgram(p);return p}
 
 var VS='attribute vec3 aPos,aNorm,aCol;uniform mat4 uMVP,uMod;uniform mat3 uNM;varying vec3 vC,vN,vW;void main(){vec4 w=uMod*vec4(aPos,1.0);vW=w.xyz;vN=normalize(uNM*aNorm);vC=aCol;gl_Position=uMVP*vec4(aPos,1.0);}';
-var FS='precision highp float;varying vec3 vC,vN,vW;uniform vec3 uCam;uniform float uEm,uAl,uInv;float cL(vec3 lp,float li,vec3 n){vec3 ld=normalize(lp-vW);float d=max(dot(n,ld),0.0);float ds=length(lp-vW);return d*li/(1.0+0.003*ds*ds);}void main(){vec3 n=normalize(vN),vd=normalize(uCam-vW),al=vC;float light=.35+cL(vec3(6,8,6),1.0,n)+cL(vec3(-5,4,-3),.7,n)+cL(vec3(0,-4,5),.5,n);vec3 l=al*(light+uEm);float fr=pow(1.0-max(dot(vd,n),0.0),4.0);vec3 fc=l+al*uEm+fr*al*.12;fc=pow(fc/(fc+vec3(1.0)),vec3(1.0/2.2));fc=mix(fc,1.0-fc,uInv);gl_FragColor=vec4(fc,uAl);}';
+var FS='precision highp float;varying vec3 vC,vN,vW;uniform vec3 uCam;uniform float uEm,uAl,uInv;float cL(vec3 lp,float li,vec3 n){vec3 ld=normalize(lp-vW);float d=max(dot(n,ld),0.0);float ds=length(lp-vW);return d*li/(1.0+0.003*ds*ds);}void main(){vec3 n=normalize(vN),vd=normalize(uCam-vW),al=vC;float light=.55+cL(vec3(6,8,6),1.5,n)+cL(vec3(-5,4,-3),1.1,n)+cL(vec3(0,-4,5),.9,n);vec3 l=al*(light+uEm);float fr=pow(1.0-max(dot(vd,n),0.0),4.0);vec3 fc=l+al*uEm+fr*al*.12;fc=pow(fc/(fc+vec3(1.0)),vec3(1.0/2.2));fc=mix(fc,1.0-fc,uInv);gl_FragColor=vec4(fc,uAl);}';
 
 var prog=mkP(gl,VS,FS);
 var S=36;
@@ -447,7 +447,7 @@ document.addEventListener("wheel",function(e){zZ+=e.deltaY*0.005;zZ=Math.max(-12
 var fc=0,lt=Date.now(),time=0;
 
 // RENDER
-function render(){requestAnimationFrame(render);time+=0.016;if(!drag){rY+=vY;rX+=vX;vX*=.97;vY*=.97;if(Math.abs(vX)<.0001)vX=0;if(Math.abs(vY)<.0001)vY=0}fc++;var now=Date.now();if(now-lt>=1000){lastFps=fc;fc=0;lt=now}var el=Math.floor((now-t0)/1000),h=Math.floor(el/3600),m=Math.floor((el%3600)/60),s=el%60;statsEl.textContent="FPS: "+lastFps+" | UP: "+h+"h "+m+"m "+s+"s";var asp=canvas.width/canvas.height,proj=mPersp(Math.PI/4,asp,.1,100),view=mMul(mTrans(0,0,zZ),mMul(mRotY(rY),mRotX(rX)));var t=time*.001;var th=themes[curTheme]||themes[1];gl.clearColor(th.bg[0],th.bg[1],th.bg[2],1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.useProgram(prog);gl.uniform3f(uCam,0,0,-zZ);var oMod=mMul(mMul(mRotX(t*.15),mRotY(t*.2)),mRotZ(t*.1));gl.uniformMatrix4fv(uMVP,false,mMul(mMul(proj,view),oMod));gl.uniformMatrix4fv(uMod,false,oMod);gl.uniformMatrix3fv(uNM,false,mNorm(oMod));gl.uniform1f(uEm,.1);gl.uniform1f(uAl,.25);gl.uniform1f(uInv,0);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);bindM(outerBuf);gl.drawArrays(gl.TRIANGLES,0,36);gl.depthMask(true);gl.uniform1f(uAl,1);for(var i=0;i<innerC.length;i++){var c=innerC[i],oa=t*c.s+c.p,ox=Math.cos(oa)*c.o,oy=Math.sin(oa*.7)*c.o*.5,oz=Math.sin(oa)*c.o,iMod=mMul(mMul(mTrans(ox,oy,oz),mMul(mMul(mRotX(t*c.sp),mRotY(t*c.sp*.7)),mRotZ(t*c.sp*.3))),mScale(c.sc,c.sc,c.sc));gl.uniformMatrix4fv(uMVP,false,mMul(mMul(proj,view),iMod));gl.uniformMatrix4fv(uMod,false,iMod);gl.uniformMatrix3fv(uNM,false,mNorm(iMod));gl.uniform1f(uEm,.2);gl.uniform1f(uAl,.9);gl.uniform1f(uInv,0);bindM(iBufs[i]);gl.drawArrays(gl.TRIANGLES,0,iCnts[i])}drawP()}
+function render(){requestAnimationFrame(render);time+=0.016;if(currentView==="reactor"){renderReactor();return}if(!drag){rY+=vY;rX+=vX;vX*=.97;vY*=.97;if(Math.abs(vX)<.0001)vX=0;if(Math.abs(vY)<.0001)vY=0}fc++;var now=Date.now();if(now-lt>=1000){lastFps=fc;fc=0;lt=now}var el=Math.floor((now-t0)/1000),h=Math.floor(el/3600),m=Math.floor((el%3600)/60),s=el%60;statsEl.textContent="FPS: "+lastFps+" | UP: "+h+"h "+m+"m "+s+"s";var asp=canvas.width/canvas.height,proj=mPersp(Math.PI/4,asp,.1,100),view=mMul(mTrans(0,0,zZ),mMul(mRotY(rY),mRotX(rX)));var t=time;var th=themes[curTheme]||themes[1];gl.clearColor(th.bg[0],th.bg[1],th.bg[2],1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.useProgram(prog);gl.uniform3f(uCam,0,0,-zZ);var oMod=mMul(mMul(mRotX(time*0.05),mRotY(time*0.1)),mRotZ(time*0.03));gl.uniformMatrix4fv(uMVP,false,mMul(mMul(proj,view),oMod));gl.uniformMatrix4fv(uMod,false,oMod);gl.uniformMatrix3fv(uNM,false,mNorm(oMod));gl.uniform1f(uEm,.25);gl.uniform1f(uAl,.35);gl.uniform1f(uInv,0);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);bindM(outerBuf);gl.drawArrays(gl.TRIANGLES,0,36);gl.depthMask(true);gl.uniform1f(uAl,1);for(var i=0;i<innerC.length;i++){var c=innerC[i],oa=t*c.s+c.p,ox=Math.cos(oa)*c.o,oy=Math.sin(oa*.7)*c.o*.5,oz=Math.sin(oa)*c.o,iMod=mMul(mMul(mTrans(ox,oy,oz),mMul(mMul(mRotX(t*c.sp),mRotY(t*c.sp*.7)),mRotZ(t*c.sp*.3))),mScale(c.sc,c.sc,c.sc));gl.uniformMatrix4fv(uMVP,false,mMul(mMul(proj,view),iMod));gl.uniformMatrix4fv(uMod,false,iMod);gl.uniformMatrix3fv(uNM,false,mNorm(iMod));gl.uniform1f(uEm,.35);gl.uniform1f(uAl,.95);gl.uniform1f(uInv,0);bindM(iBufs[i]);gl.drawArrays(gl.TRIANGLES,0,iCnts[i])}drawP()}
 
 // KEYBOARD
 var currentView="void";
@@ -492,7 +492,7 @@ function updateRPanel(){var b=document.getElementById("rPanelBody");b.innerHTML=
 
 var rCtx=rCv.getContext("2d"),rParticles=[];
 function initReactorGL(){rCv.width=window.innerWidth;rCv.height=window.innerHeight;rParticles=[];for(var i=0;i<40;i++)rParticles.push({x:rCv.width*0.5+(Math.random()-0.5)*100,y:rCv.height*0.5+(Math.random()-0.5)*100,vx:(Math.random()-0.5)*0.5,vy:-Math.random()*1.5-0.5,a:Math.random()*0.5+0.2,life:Math.random()})}
-function renderReactor(){if(currentView!=="reactor")return;var W=rCv.width,H=rCv.height;rCtx.fillStyle="rgba(0,0,0,0.15)";rCtx.fillRect(0,0,W,H);var cx=W*0.55,cy=H*0.5,tf=Math.min(1,R.temp/2500);var cr=Math.floor(50+tf*205),cg=Math.floor(200-tf*150),cb=Math.floor(50-tf*50);
+function renderReactor(){if(currentView!=="reactor")return;var W=rCv.width,H=rCv.height;rCtx.fillStyle="#000";rCtx.fillRect(0,0,W,H);var cx=W*0.55,cy=H*0.5,tf=Math.min(1,R.temp/2500);var cr=Math.floor(50+tf*205),cg=Math.floor(200-tf*150),cb=Math.floor(50-tf*50);
 // core glow
 rCtx.fillStyle="rgba("+cr+","+cg+","+cb+",0.12)";rCtx.beginPath();rCtx.arc(cx,cy,80+tf*40,0,Math.PI*2);rCtx.fill();
 rCtx.fillStyle="rgba("+cr+","+cg+","+cb+",0.06)";rCtx.beginPath();rCtx.arc(cx,cy,120+tf*60,0,Math.PI*2);rCtx.fill();
@@ -509,8 +509,7 @@ rCtx.fillStyle="rgba(200,220,255,"+pp.a*(1-pp.life)+")";rCtx.beginPath();rCtx.ar
 // pipes
 rCtx.strokeStyle="rgba(80,80,100,0.4)";rCtx.lineWidth=3;
 for(var p=0;p<4;p++){var pa=(p/4)*Math.PI*2+Math.PI/8;var px1=cx+Math.cos(pa)*80,py1=cy+Math.sin(pa)*80;
-var px2=cx+Math.cos(pa)*120,py2=cy+Math.sin(pa)*120;rCtx.beginPath();rCtx.moveTo(px1,py1);rCtx.lineTo(px2,py2);rCtx.stroke()}
-requestAnimationFrame(renderReactor)}
+var px2=cx+Math.cos(pa)*120,py2=cy+Math.sin(pa)*120;rCtx.beginPath();rCtx.moveTo(px1,py1);rCtx.lineTo(px2,py2);rCtx.stroke()}}
 
 // GUI
 var guiLayer=document.getElementById("guiLayer"),guiWins={},guiActiveId=null,guiNextId=1;
