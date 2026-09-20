@@ -8,8 +8,33 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#000;overflow:hidden;font-family:'Consolas',monospace;color:rgba(43,208,208,0.8)}
 canvas#gl{position:fixed;top:0;left:0;width:100vw;height:100vh;display:block;z-index:0}
+canvas#rCv{position:fixed;top:0;left:0;width:100vw;height:100vh;display:none;z-index:0}
 canvas#pcv{position:fixed;top:0;left:0;width:100vw;height:100vh;display:block;pointer-events:none;z-index:1}
 #vig{position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:2;background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,0.6) 100%)}
+#rPanel{position:fixed;top:12px;right:12px;width:220px;z-index:12;display:none;background:rgba(0,0,0,0.85);border:1px solid rgba(255,80,50,0.3);padding:12px;font-size:11px;line-height:1.8}
+#rPanel .rp-title{color:rgba(255,100,50,0.9);font-size:12px;border-bottom:1px solid rgba(255,80,50,0.2);padding-bottom:4px;margin-bottom:4px}
+#rPanel .rp-ok{color:rgba(80,255,80,0.8)}
+#rPanel .rp-warn{color:rgba(255,255,50,0.8)}
+#rPanel .rp-danger{color:rgba(255,80,50,0.9)}
+#rTerminal{position:fixed;bottom:0;left:0;width:420px;height:35vh;z-index:12;display:none;background:linear-gradient(transparent,rgba(10,8,4,0.95) 20%);padding:40px 16px 12px;flex-direction:column;font-size:12px;border-right:1px solid rgba(255,80,50,0.2)}
+#rTerminal #rtOut{flex:1;overflow-y:auto;color:rgba(255,200,100,0.7);scrollbar-width:thin;scrollbar-color:rgba(255,80,50,0.3) transparent}
+#rTerminal #rtRow{display:flex;align-items:center;padding-top:8px;border-top:1px solid rgba(255,80,50,0.15)}
+#rTerminal #rtPmt{color:rgba(255,100,50,0.9);margin-right:8px;white-space:nowrap}
+#rTerminal #rtIn{flex:1;background:transparent;border:none;outline:none;color:rgba(255,200,100,0.7);font-family:inherit;font-size:12px;caret-color:rgba(255,100,50,0.8)}
+#navR{position:fixed;top:50%;right:12px;z-index:11;background:rgba(0,0,0,0.5);border:1px solid rgba(255,80,50,0.3);color:rgba(255,100,50,0.7);padding:8px 6px;cursor:pointer;font-size:14px;display:none}
+#navL{position:fixed;top:50%;left:12px;z-index:11;background:rgba(0,0,0,0.5);border:1px solid rgba(43,208,208,0.3);color:rgba(43,208,208,0.7);padding:8px 6px;cursor:pointer;font-size:14px;display:none}
+#guiLayer{position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:8}
+.gui-win{position:absolute;background:rgba(10,10,30,0.92);border:1px solid rgba(43,208,208,0.4);min-width:120px;min-height:60px;pointer-events:auto;cursor:default}
+.gui-win.active{border-color:rgba(43,208,208,0.8);box-shadow:0 0 12px rgba(43,208,208,0.2)}
+.gui-win .gui-title{background:rgba(43,208,208,0.15);padding:4px 8px;font-size:11px;color:rgba(43,208,208,0.8);cursor:move;display:flex;justify-content:space-between;align-items:center}
+.gui-win .gui-title .gui-close{cursor:pointer;color:rgba(255,80,80,0.7);margin-left:8px}
+.gui-win .gui-title .gui-close:hover{color:rgba(255,80,80,1)}
+.gui-win .gui-body{padding:8px;position:relative;overflow:auto}
+.gui-label{position:absolute;color:rgba(43,208,208,0.8);font-size:12px;white-space:nowrap}
+.gui-btn{position:absolute;background:rgba(43,208,208,0.15);border:1px solid rgba(43,208,208,0.4);color:rgba(43,208,208,0.9);padding:4px 12px;cursor:pointer;font-family:inherit;font-size:11px}
+.gui-btn:hover{background:rgba(43,208,208,0.25)}
+.gui-input{position:absolute;background:rgba(0,0,0,0.5);border:1px solid rgba(43,208,208,0.3);color:rgba(43,208,208,0.8);padding:4px 8px;font-family:inherit;font-size:11px;outline:none}
+.gui-check{position:absolute;color:rgba(43,208,208,0.7);font-size:11px;cursor:pointer}
 #terminal{position:fixed;bottom:0;left:0;width:100%;height:35vh;z-index:10;background:linear-gradient(transparent,rgba(0,0,0,0.95) 20%);padding:40px 20px 12px;display:flex;flex-direction:column}
 #tOut{flex:1;overflow-y:auto;font-size:13px;line-height:1.6;scrollbar-width:thin;scrollbar-color:rgba(43,208,208,0.3) transparent}
 #tRow{display:flex;align-items:center;padding-top:8px;border-top:1px solid rgba(43,208,208,0.15)}
@@ -40,11 +65,17 @@ canvas#pcv{position:fixed;top:0;left:0;width:100vw;height:100vh;display:block;po
 </head>
 <body>
 <canvas id="gl"></canvas>
+<canvas id="rCv"></canvas>
 <canvas id="pcv"></canvas>
 <div id="vig"></div>
 <div id="stats"></div>
 <div id="thI"></div>
 <div id="objText"></div>
+<div id="navR">&#9654;</div>
+<div id="navL">&#9664;</div>
+<div id="guiLayer"></div>
+<div id="rPanel"><div class="rp-title">REACTOR STATUS</div><div id="rPanelBody"></div></div>
+<div id="rTerminal"><div id="rtOut"></div><div id="rtRow"><span id="rtPmt">reactor#&gt;</span><input id="rtIn" type="text" spellcheck="false" autocomplete="off"></div></div>
 <div id="terminal">
   <div id="tOut"></div>
   <div id="tRow">
@@ -146,6 +177,16 @@ function runCmd(raw){
     tp("  reload            reboot the void");
     tp("  about             about objbox ii");
     tp("");
+    tp("  reactor           enter reactor (F3)");
+    tp("  studio            open voidstudio");
+    tp("  gui window <t>    create gui window");
+    tp("  gui label <t> x y add label");
+    tp("  gui button <t> x y add button");
+    tp("  gui input <p> x y add input");
+    tp("  gui check <l> x y add checkbox");
+    tp("  gui close         close active window");
+    tp("  gui clear         close all windows");
+    tp("");
   } else if(cmd==="clear"){
     tOut.innerHTML="";
   } else if(cmd==="echo"){
@@ -208,6 +249,38 @@ function runCmd(raw){
     tp("objbox ii v2.0",tc(0.9));
     tp("rebuilt from nothing.","rgba(255,255,255,0.3)");
     tp("the old void died. this one is better.","rgba(255,255,255,0.3)");
+  } else if(cmd==="reactor"){
+    tp("entering reactor...","rgba(255,100,50,0.7)");
+    setTimeout(function(){switchView("reactor")},500);
+  } else if(cmd==="studio"){
+    tp("opening voidstudio...","rgba(200,100,255,0.7)");
+    setTimeout(openStudio,300);
+  } else if(cmd==="gui"){
+    var ga=(args[0]||"").toLowerCase();
+    if(ga==="window"){
+      var t=args.slice(1).join(" ").replace(/"/g,"")||"window";
+      var id=guiCreateWin(t,100+Math.random()*200,100+Math.random()*200,220,160);
+      tp("window: "+id,tc(0.6));
+    } else if(ga==="label"){
+      var t=args[1]?args[1].replace(/"/g,""):"";var x=parseInt(args[2])||10;var y=parseInt(args[3])||10;
+      guiAddLabel(t,x,y);
+    } else if(ga==="button"){
+      var t=args[1]?args[1].replace(/"/g,""):"";var x=parseInt(args[2])||10;var y=parseInt(args[3])||10;
+      guiAddButton(t,x,y);
+    } else if(ga==="input"){
+      var p=args[1]?args[1].replace(/"/g,""):"";var x=parseInt(args[2])||10;var y=parseInt(args[3])||10;
+      guiAddInput(p,x,y);
+    } else if(ga==="check"){
+      var l=args[1]?args[1].replace(/"/g,""):"";var x=parseInt(args[2])||10;var y=parseInt(args[3])||10;
+      guiAddCheck(l,x,y);
+    } else if(ga==="close"||ga==="destroy"){
+      if(guiActiveId){guiDestroy(guiActiveId);tp("closed","rgba(80,255,80,0.5)")}
+      else{tp("no active window","rgba(255,80,80,0.5)")}
+    } else if(ga==="clear"){
+      guiClearAll();tp("all windows closed",tc(0.6));
+    } else {
+      tp("gui: window, label, button, input, check, close, clear","rgba(255,255,255,0.4)");
+    }
   } else {
     tp("unknown command: "+cmd,"rgba(255,80,80,0.6)");
     tp("type \"help\" for commands.","rgba(255,255,255,0.2)");
@@ -531,11 +604,367 @@ function render(){
   drawP();
 }
 
-// KEYBOARD (themes)
+// KEYBOARD (themes + nav)
+var currentView="void";
 document.addEventListener("keydown",function(e){
-  if(e.target.tagName==="INPUT")return;
-  if(e.key>="1"&&e.key<="5"){curTheme=parseInt(e.key);showThI(themes[curTheme].n)}
+  if(e.target.tagName==="INPUT"&&e.target.id!=="rtIn")return;
+  if(e.key>="1"&&e.key<="5"&&currentView==="void"){curTheme=parseInt(e.key);showThI(themes[curTheme].n)}
+  if(e.key==="F3"){e.preventDefault();switchView(currentView==="void"?"reactor":"void")}
 });
+
+// NAV BUTTONS
+document.getElementById("navR").addEventListener("click",function(){switchView("reactor")});
+document.getElementById("navL").addEventListener("click",function(){switchView("void")});
+
+// VIEW SWITCHING
+var glCanvas=document.getElementById("gl");
+var rCv=document.getElementById("rCv");
+var rPanel=document.getElementById("rPanel");
+var rTerm=document.getElementById("rTerminal");
+var navR=document.getElementById("navR");
+var navL=document.getElementById("navL");
+var terminal=document.getElementById("terminal");
+var pcv=document.getElementById("pcv");
+
+function switchView(v){
+  currentView=v;
+  if(v==="reactor"){
+    glCanvas.style.display="none";pcv.style.display="none";document.getElementById("vig").style.display="none";
+    terminal.style.display="none";document.getElementById("thI").style.display="none";
+    navR.style.display="none";navL.style.display="block";
+    rCv.style.display="block";rPanel.style.display="block";rTerm.style.display="flex";
+    initReactorGL();rPrint("reactor online. type \"help\" for commands.","rgba(255,100,50,0.7)");
+    document.getElementById("rtIn").focus();
+  } else {
+    rCv.style.display="none";rPanel.style.display="none";rTerm.style.display="none";
+    navL.style.display="none";navR.style.display="block";
+    glCanvas.style.display="block";pcv.style.display="block";document.getElementById("vig").style.display="block";
+    terminal.style.display="flex";document.getElementById("thI").style.display="block";
+    tIn.focus();
+  }
+}
+
+// ============================================
+//  REACTOR SYSTEM
+// ============================================
+var R={temp:280,pressure:14.5,power:15,rodPos:30,coolantOn:false,xenon:2,iodine:3,
+  flux:0.5,scramActive:false,scramTimer:0,running:true,history:[],lastTick:0,
+  tickInterval:100,ambientTemp:25,tabClosed:false};
+var rHist=[];var rHistIdx=-1;
+
+function rLog(msg){R.history.push("["+new Date().toLocaleTimeString()+"] "+msg);if(R.history.length>100)R.history.shift()}
+function rPrint(txt,col){var d=document.createElement("div");if(col)d.style.color=col;d.textContent=txt;var o=document.getElementById("rtOut");o.appendChild(d);o.scrollTop=o.scrollHeight}
+var rtIn=document.getElementById("rtIn");
+rtIn.addEventListener("keydown",function(e){
+  e.stopPropagation();
+  if(e.key==="Enter"){
+    var raw=rtIn.value.trim();rtIn.value="";
+    if(!raw)return;rPrint("reactor#> "+raw,"rgba(255,255,255,0.4)");rHist.push(raw);rHistIdx=rHist.length;
+    try{evalRCmd(raw)}catch(err){rPrint("error: "+err.message,"rgba(255,80,80,0.8)")}
+  } else if(e.key==="ArrowUp"){e.preventDefault();if(rHistIdx>0){rHistIdx--;rtIn.value=rHist[rHistIdx]}}
+  else if(e.key==="ArrowDown"){e.preventDefault();if(rHistIdx<rHist.length-1){rHistIdx++;rtIn.value=rHist[rHistIdx]}else{rHistIdx=rHist.length;rtIn.value=""}}
+});
+
+function reactorTick(){
+  if(!R.running)return;
+  var now=Date.now();var dt=(now-R.lastTick)/1000;R.lastTick=now;
+  if(R.scramActive){R.rodPos=Math.max(0,R.rodPos-50*dt);R.scramTimer+=dt;if(R.rodPos<=0){R.scramActive=false;rLog("SCRAM complete — rods fully inserted");rPrint("[SCRAM] rods fully inserted","rgba(255,200,50,0.8)")}}
+  var rodReact=(R.rodPos/100)*0.05;
+  var xenonReact=R.xenon*0.002;
+  var totalReact=rodReact-xenonReact;
+  var beta=0.0065;var lambda=0.08;var promptLife=0.0001;
+  var dk=totalReact-beta;
+  R.flux=R.flux*Math.exp(dk/promptLife*dt)+lambda*R.iodine*dt;
+  R.flux=Math.max(0,Math.min(3,R.flux));
+  R.power=R.flux*30;
+  R.power=Math.max(0,Math.min(300,R.power));
+  var coolantCoeff=R.coolantOn?1.5:0;
+  R.temp+=R.power*8.5*dt-coolantCoeff*(R.temp-R.ambientTemp)*dt;
+  R.temp=Math.max(R.ambientTemp,Math.min(3000,R.temp));
+  var targetPressure=14.5+(R.temp-300)*0.008;
+  R.pressure+=(targetPressure-R.pressure)*0.5*dt;
+  R.pressure=Math.max(10,Math.min(30,R.pressure));
+  R.iodine+=R.power*0.01*dt;
+  R.xenon+=R.iodine*0.005*dt-R.flux*R.xenon*0.001*dt;
+  R.iodine*=0.999;R.xenon=Math.max(0,Math.min(100,R.xenon));
+  if(R.temp>=2500){rLog("MELTDOWN");rPrint("","");rPrint("  ####  ####  #    #  ####  #  #  ","rgba(255,50,50,1)");rPrint("  #     #  #  ##  ##  #     # #   ","rgba(255,50,50,1)");rPrint("  ###   ####  # ## #  ###   ##    ","rgba(255,50,50,1)");rPrint("  #     #  #  #    #  #     # #   ","rgba(255,50,50,1)");rPrint("  ####  #  #  #    #  ####  #  #  ","rgba(255,50,50,1)");rPrint("","");rPrint("CONTAINMENT FAILURE","rgba(255,50,50,1)");R.running=false;setTimeout(function(){try{window.close()}catch(e){}},3000)}
+  if(R.pressure>=25){rLog("OVERPRESSURE WARNING");R.pressure-=0.5}
+  if(R.temp<100&&R.power<1&&R.running){rPrint("freezedown imminent...","rgba(100,150,255,0.8)")}
+  updateRPanel();
+}
+
+function evalRCmd(raw){
+  var parts=raw.split(/\s+/);var cmd=parts[0].toLowerCase();var args=parts.slice(1);
+  if(cmd==="help"){
+    rPrint("--- REACTOR COMMANDS ---","rgba(255,100,50,0.9)");
+    rPrint("  status            full readout");
+    rPrint("  temp              core temperature");
+    rPrint("  pressure          coolant pressure");
+    rPrint("  power             thermal power");
+    rPrint("  rod <0-100>       set rod position");
+    rPrint("  coolant <on|off>  toggle coolant");
+    rPrint("  az5 / scram       emergency shutdown");
+    rPrint("  flux              neutron flux");
+    rPrint("  xenon             xenon-135 level");
+    rPrint("  iodine            iodine-135 level");
+    rPrint("  history           event log");
+    rPrint("  reset             reset all");
+    rPrint("  nyarch            ???");
+  } else if(cmd==="status"){
+    rPrint("=== REACTOR STATUS ===","rgba(255,100,50,0.8)");
+    rPrint("  TEMP: "+R.temp.toFixed(1)+" C"+(R.temp>=2000?" [DANGER]":R.temp>=1000?" [WARN]":" [OK]"),R.temp>=2000?"rgba(255,80,50,0.9)":R.temp>=1000?"rgba(255,255,50,0.8)":"rgba(80,255,80,0.8)");
+    rPrint("  PRESSURE: "+R.pressure.toFixed(1)+" MPa"+(R.pressure>=22?" [HIGH]":" [OK]"),R.pressure>=22?"rgba(255,80,50,0.9)":"rgba(80,255,80,0.8)");
+    rPrint("  POWER: "+R.power.toFixed(1)+"%"+(R.power>=120?" [HIGH]":" [OK]"),R.power>=120?"rgba(255,255,50,0.8)":"rgba(80,255,80,0.8)");
+    rPrint("  RODS: "+R.rodPos.toFixed(0)+"% withdrawn");
+    rPrint("  COOLANT: "+(R.coolantOn?"ON":"OFF"),R.coolantOn?"rgba(80,150,255,0.8)":"rgba(255,80,50,0.6)");
+    rPrint("  FLUX: "+R.flux.toFixed(4));
+    rPrint("  XENON: "+R.xenon.toFixed(2));
+    rPrint("  IODINE: "+R.iodine.toFixed(2));
+  } else if(cmd==="temp"||cmd==="temperature"){
+    rPrint("core temp: "+R.temp.toFixed(1)+" C",R.temp>=2000?"rgba(255,80,50,0.9)":R.temp>=1000?"rgba(255,255,50,0.8)":"rgba(80,255,80,0.8)");
+  } else if(cmd==="pressure"||cmd==="pres"){
+    rPrint("pressure: "+R.pressure.toFixed(1)+" MPa",R.pressure>=22?"rgba(255,80,50,0.9)":"rgba(80,255,80,0.8)");
+  } else if(cmd==="power"){
+    rPrint("power: "+R.power.toFixed(1)+"%",R.power>=120?"rgba(255,255,50,0.8)":"rgba(80,255,80,0.8)");
+  } else if(cmd==="rod"){
+    if(args[0]!==undefined){var v=Math.max(0,Math.min(100,parseInt(args[0])||0));R.rodPos=v;rLog("rods set to "+v+"%");rPrint("rods: "+v+"% withdrawn","rgba(80,255,80,0.8)")}
+    else{rPrint("rods: "+R.rodPos.toFixed(0)+"% withdrawn")}
+  } else if(cmd==="coolant"){
+    var a=(args[0]||"").toLowerCase();
+    if(a==="on"){R.coolantOn=true;rLog("coolant ON");rPrint("coolant: ON","rgba(80,150,255,0.8)")}
+    else if(a==="off"){R.coolantOn=false;rLog("coolant OFF");rPrint("coolant: OFF","rgba(255,80,50,0.6)")}
+    else{rPrint("coolant: "+(R.coolantOn?"ON":"OFF"),R.coolantOn?"rgba(80,150,255,0.8)":"rgba(255,80,50,0.6)")}
+  } else if(cmd==="az5"||cmd==="scram"){
+    R.scramActive=true;R.scramTimer=0;rLog("SCRAM initiated");rPrint("[SCRAM] emergency shutdown initiated","rgba(255,200,50,0.9)");
+  } else if(cmd==="flux"){
+    rPrint("flux: "+R.flux.toFixed(4));
+  } else if(cmd==="xenon"){
+    rPrint("xenon-135: "+R.xenon.toFixed(2));
+  } else if(cmd==="iodine"){
+    rPrint("iodine-135: "+R.iodine.toFixed(2));
+  } else if(cmd==="history"){
+    var start=Math.max(0,R.history.length-20);
+    for(var i=start;i<R.history.length;i++)rPrint(R.history[i],"rgba(255,200,100,0.5)");
+  } else if(cmd==="reset"){
+    R.temp=280;R.pressure=14.5;R.power=15;R.rodPos=30;R.coolantOn=false;R.xenon=2;R.iodine=3;R.flux=0.5;R.scramActive=false;R.running=true;R.lastTick=Date.now();rLog("reactor reset");rPrint("reactor reset to initial state","rgba(80,255,80,0.8)");
+  } else if(cmd==="nyarch"){
+    rPrint("jbo: NYARCH DETECTED IN REACTOR TERMINAL","rgba(255,50,50,1)");
+    rPrint("jbo: WHAT ARE YOU DOING HERE","rgba(255,50,50,1)");
+    rPrint("jbo: GET OUT GET OUT GET OUT","rgba(255,50,50,1)");
+  } else {
+    rPrint("unknown: "+cmd,"rgba(255,80,80,0.6)");
+  }
+}
+
+function updateRPanel(){
+  var b=document.getElementById("rPanelBody");
+  var tc=function(v,ok,w,d){return v>=d?"rp-danger":v>=w?"rp-warn":"rp-ok"};
+  b.innerHTML="";
+  var lines=[
+    ["TEMP",R.temp.toFixed(1)+" C",tc(R.temp,500,1500,2000)],
+    ["PRESSURE",R.pressure.toFixed(1)+" MPa",R.pressure>=22?"rp-danger":R.pressure>=18?"rp-warn":"rp-ok"],
+    ["POWER",R.power.toFixed(1)+"%",R.power>=120?"rp-danger":R.power>=80?"rp-warn":"rp-ok"],
+    ["RODS",R.rodPos.toFixed(0)+"%","rp-ok"],
+    ["COOLANT",R.coolantOn?"ON":"OFF",R.coolantOn?"rp-ok":"rp-danger"],
+    ["FLUX",R.flux.toFixed(4),"rp-ok"],
+    ["XENON",R.xenon.toFixed(2),R.xenon>50?"rp-warn":"rp-ok"],
+    ["SIM",R.running?"ACTIVE":"STOPPED",R.running?"rp-ok":"rp-danger"]
+  ];
+  for(var i=0;i<lines.length;i++){
+    var l=lines[i];
+    var d=document.createElement("div");
+    d.innerHTML="<span class='"+l[2]+"'>"+l[0]+": "+l[1]+"</span>";
+    b.appendChild(d);
+  }
+}
+
+// REACTOR GL (simple rendering)
+var rCtx=rCv.getContext("2d");
+var rParticles=[];
+function initReactorGL(){rCv.width=window.innerWidth;rCv.height=window.innerHeight;rParticles=[];for(var i=0;i<40;i++)rParticles.push({x:rCv.width*0.3+Math.random()*rCv.width*0.4,y:rCv.height*0.2+Math.random()*rCv.height*0.6,vx:(Math.random()-0.5)*0.5,vy:-Math.random()*1.5-0.5,a:Math.random()*0.5+0.2,life:Math.random()})}
+function renderReactor(){
+  if(currentView!=="reactor")return;
+  var W=rCv.width,H=rCv.height;
+  rCtx.fillStyle="rgba(0,0,0,0.15)";rCtx.fillRect(0,0,W,H);
+  var cx=W*0.55,cy=H*0.5;
+  var tempFrac=Math.min(1,R.temp/2500);
+  var coreR=Math.floor(50+tempFrac*205);
+  var coreG=Math.floor(200-tempFrac*150);
+  var coreB=Math.floor(50-tempFrac*50);
+  rCtx.fillStyle="rgba("+coreR+","+coreG+","+coreB+",0.12)";
+  rCtx.beginPath();rCtx.arc(cx,cy,80+tempFrac*40,0,Math.PI*2);rCtx.fill();
+  rCtx.fillStyle="rgba("+coreR+","+coreG+","+coreB+",0.06)";
+  rCtx.beginPath();rCtx.arc(cx,cy,120+tempFrac*60,0,Math.PI*2);rCtx.fill();
+  var numRods=8;
+  for(var i=0;i<numRods;i++){
+    var angle=(i/numRods)*Math.PI*2;
+    var rx=cx+Math.cos(angle)*50;
+    var ry=cy+Math.sin(angle)*50;
+    var rodH=30*(R.rodPos/100);
+    rCtx.fillStyle="rgba(180,180,200,0.6)";
+    rCtx.fillRect(rx-2,ry-15,4,30);
+    rCtx.fillStyle=tempFrac>0.5?"rgba(255,"+Math.floor(200-tempFrac*150)+",50,0.8)":"rgba(200,180,50,0.7)";
+    rCtx.fillRect(rx-2,ry-15,4,rodH);
+  }
+  if(R.coolantOn){
+    rCtx.fillStyle="rgba(50,100,255,0.15)";
+    rCtx.beginPath();rCtx.arc(cx,cy,100,0,Math.PI*2);rCtx.fill();
+  }
+  for(var j=0;j<rParticles.length;j++){
+    var p=rParticles[j];
+    p.x+=p.vx;p.y+=p.vy;p.life+=0.01;
+    if(p.life>1||p.y<0){p.x=cx+(Math.random()-0.5)*80;p.y=cy+30;p.life=0;p.vy=-Math.random()*1.5-0.5}
+    var pa=p.a*(1-p.life);
+    rCtx.fillStyle="rgba(200,220,255,"+pa+")";
+    rCtx.beginPath();rCtx.arc(p.x,p.y,1.5,0,Math.PI*2);rCtx.fill();
+  }
+  requestAnimationFrame(renderReactor);
+}
+R.lastTick=Date.now();
+setInterval(reactorTick,50);
+
+// ============================================
+//  GUI WINDOW SYSTEM
+// ============================================
+var guiLayer=document.getElementById("guiLayer");
+var guiWins={};var guiActiveId=null;var guiNextId=1;
+
+function guiCreateWin(title,x,y,w,h){
+  var id="gw"+(guiNextId++);
+  var el=document.createElement("div");
+  el.className="gui-win active";
+  el.style.left=(x||100)+"px";el.style.top=(y||100)+"px";
+  el.style.width=(w||200)+"px";el.style.height=(h||150)+"px";
+  el.innerHTML="<div class='gui-title'><span>"+title+"</span><span class='gui-close' data-id='"+id+"'>&times;</span></div><div class='gui-body' id='"+id+"_body'></div>";
+  guiLayer.appendChild(el);
+  guiWins[id]={el:el,body:el.querySelector(".gui-body"),title:title};
+  guiMakeDraggable(el,el.querySelector(".gui-title"));
+  el.addEventListener("mousedown",function(){guiFocus(id)});
+  el.querySelector(".gui-close").addEventListener("click",function(){guiDestroy(id)});
+  guiFocus(id);
+  return id;
+}
+
+function guiMakeDraggable(el,handle){
+  var ox,oy,sx,sy;
+  handle.addEventListener("mousedown",function(e){
+    e.preventDefault();sx=e.clientX;sy=e.clientY;
+    ox=el.offsetLeft;oy=el.offsetTop;
+    function onMove(e){el.style.left=ox+(e.clientX-sx)+"px";el.style.top=oy+(e.clientY-sy)+"px"}
+    function onUp(){document.removeEventListener("mousemove",onMove);document.removeEventListener("mouseup",onUp)}
+    document.addEventListener("mousemove",onMove);document.addEventListener("mouseup",onUp);
+  });
+}
+
+function guiFocus(id){
+  if(guiActiveId&&guiWins[guiActiveId])guiWins[guiActiveId].el.classList.remove("active");
+  guiActiveId=id;
+  if(guiWins[id])guiWins[id].el.classList.add("active");
+}
+
+function guiDestroy(id){
+  if(guiWins[id]){guiWins[id].el.remove();delete guiWins[id];if(guiActiveId===id)guiActiveId=null}
+}
+
+function guiClearAll(){for(var id in guiWins)guiWins[id].el.remove();guiWins={};guiActiveId=null}
+
+function guiAddLabel(text,x,y){
+  if(!guiActiveId||!guiWins[guiActiveId])return;
+  var el=document.createElement("div");el.className="gui-label";el.textContent=text;
+  el.style.left=x+"px";el.style.top=y+"px";
+  guiWins[guiActiveId].body.appendChild(el);
+}
+
+function guiAddButton(text,x,y,cmd){
+  if(!guiActiveId||!guiWins[guiActiveId])return;
+  var el=document.createElement("button");el.className="gui-btn";el.textContent=text;
+  el.style.left=x+"px";el.style.top=y+"px";
+  el.addEventListener("click",function(){if(cmd)try{runCmd(cmd)}catch(e){}});
+  guiWins[guiActiveId].body.appendChild(el);
+}
+
+function guiAddInput(placeholder,x,y,cmd){
+  if(!guiActiveId||!guiWins[guiActiveId])return;
+  var el=document.createElement("input");el.className="gui-input";el.type="text";el.placeholder=placeholder||"";
+  el.style.left=x+"px";el.style.top=y+"px";
+  if(cmd)el.addEventListener("change",function(){var c=cmd.replace(/\$val/g,el.value);try{runCmd(c)}catch(e){}});
+  guiWins[guiActiveId].body.appendChild(el);
+}
+
+function guiAddCheck(label,x,y,cmd){
+  if(!guiActiveId||!guiWins[guiActiveId])return;
+  var el=document.createElement("label");el.className="gui-check";
+  var cb=document.createElement("input");cb.type="checkbox";
+  el.appendChild(cb);el.appendChild(document.createTextNode(" "+label));
+  el.style.left=x+"px";el.style.top=y+"px";
+  if(cmd)cb.addEventListener("change",function(){var c=cmd.replace(/\$val/g,cb.checked);try{runCmd(c)}catch(e){}});
+  guiWins[guiActiveId].body.appendChild(el);
+}
+
+// ============================================
+//  VOIDSTUDIO (simple)
+// ============================================
+var studioOpen=false;
+function openStudio(){
+  if(studioOpen)return;
+  studioOpen=true;
+  var prev=currentView;if(prev!=="void")switchView("void");
+  var ov=document.createElement("div");
+  ov.id="studio";ov.style.cssText="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:50;background:#0a0a1a;display:flex;flex-direction:column";
+  ov.innerHTML="<div style='display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:rgba(43,208,208,0.08);border-bottom:1px solid rgba(43,208,208,0.2)'>"+
+    "<span style='color:rgba(43,208,208,0.9);font-size:13px'>VOIDSCRIPT STUDIO</span>"+
+    "<div>"+
+    "<button id='stRun' style='background:rgba(80,255,80,0.15);border:1px solid rgba(80,255,80,0.4);color:rgba(80,255,80,0.9);padding:4px 12px;margin:0 4px;cursor:pointer;font-family:inherit;font-size:11px'>RUN</button>"+
+    "<button id='stStop' style='background:rgba(255,80,80,0.15);border:1px solid rgba(255,80,80,0.4);color:rgba(255,80,80,0.9);padding:4px 12px;margin:0 4px;cursor:pointer;font-family:inherit;font-size:11px'>STOP</button>"+
+    "<button id='stExit' style='background:rgba(255,200,50,0.15);border:1px solid rgba(255,200,50,0.4);color:rgba(255,200,50,0.9);padding:4px 12px;margin:0 4px;cursor:pointer;font-family:inherit;font-size:11px'>EXIT</button>"+
+    "</div></div>"+
+    "<div style='flex:1;display:flex;overflow:hidden'>"+
+    "<div style='flex:1;display:flex;flex-direction:column;border-right:1px solid rgba(43,208,208,0.15)'>"+
+    "<div style='padding:4px 12px;font-size:11px;color:rgba(43,208,208,0.5);border-bottom:1px solid rgba(43,208,208,0.1)'>EDITOR</div>"+
+    "<textarea id='stCode' style='flex:1;background:rgba(0,0,0,0.6);border:none;color:rgba(43,208,208,0.85);padding:12px;font-family:Consolas,monospace;font-size:13px;resize:none;outline:none;line-height:1.6' spellcheck='false'></textarea>"+
+    "</div>"+
+    "<div style='width:45%;display:flex;flex-direction:column'>"+
+    "<div style='padding:4px 12px;font-size:11px;color:rgba(43,208,208,0.5);border-bottom:1px solid rgba(43,208,208,0.1)'>OUTPUT</div>"+
+    "<div id='stOutput' style='flex:1;overflow-y:auto;padding:8px 12px;font-size:12px;color:rgba(43,208,208,0.7)'></div>"+
+    "</div></div>";
+  document.body.appendChild(ov);
+  var code=document.getElementById("stCode");
+  var out=document.getElementById("stOutput");
+  var saved=localStorage.getItem("objbox_studio_autosave");
+  if(saved)code.value=saved;
+  code.addEventListener("input",function(){localStorage.setItem("objbox_studio_autosave",code.value)});
+  document.getElementById("stRun").addEventListener("click",function(){
+    out.innerHTML="";
+    var lines=code.value.split("\n");
+    for(var i=0;i<lines.length;i++){
+      var l=lines[i].trim();
+      if(!l||l.startsWith("//"))continue;
+      try{
+        if(l.startsWith("print ")||l.startsWith("say ")){
+          var msg=l.replace(/^(print|say)\s+/,"").replace(/"/g,"");
+          var d=document.createElement("div");d.textContent=msg;d.style.color="rgba(43,208,208,0.8)";out.appendChild(d);
+        } else if(l.startsWith("gui window")){
+          var m=l.match(/gui window "?([^"]*)"?\s*(\d+)?\s*(\d+)?/);
+          if(m)guiCreateWin(m[1]||"window",200,200,parseInt(m[2])||200,parseInt(m[3])||150);
+        } else if(l.startsWith("gui label")){
+          var m=l.match(/gui label "?([^"]*)"?\s*(\d+)\s*(\d+)/);
+          if(m&&guiActiveId)guiAddLabel(m[1],parseInt(m[2]),parseInt(m[3]));
+        } else if(l.startsWith("gui button")){
+          var m=l.match(/gui button "?([^"]*)"?\s*(\d+)\s*(\d+)/);
+          if(m&&guiActiveId)guiAddButton(m[1],parseInt(m[2]),parseInt(m[3]));
+        }
+      }catch(e){}
+    }
+    var d=document.createElement("div");d.textContent="[done]";d.style.color="rgba(80,255,80,0.5)";out.appendChild(d);
+  });
+  document.getElementById("stStop").addEventListener("click",function(){guiClearAll();out.innerHTML=""});
+  document.getElementById("stExit").addEventListener("click",function(){document.getElementById("studio").remove();studioOpen=false});
+  code.addEventListener("keydown",function(e){
+    if(e.key==="Enter"&&e.ctrlKey){e.preventDefault();document.getElementById("stRun").click()}
+    if(e.key==="s"&&e.ctrlKey){e.preventDefault();localStorage.setItem("objbox_studio_autosave",code.value)}
+    if(e.key==="Escape"){document.getElementById("stExit").click()}
+  });
+}
 
 // BOOT
 setTimeout(function(){tp("objbox ii v2.0 initializing...","rgba(255,200,50,0.5)")},500);
