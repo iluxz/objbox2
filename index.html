@@ -64,7 +64,7 @@ canvas#pcv{position:fixed;top:0;left:0;width:100vw;height:100vh;display:block;po
 <div id="terminal">
   <div id="tOut"></div>
   <div id="tRow">
-    <span id="tPmt">objbox#&gt;</span>
+    <span id="tPmt">obj://&gt;</span>
     <input id="tIn" type="text" spellcheck="false" autocomplete="off" autofocus>
   </div>
 </div>
@@ -141,7 +141,7 @@ tIn.addEventListener("keydown",function(e){
   if(e.key==="Enter"){
     var raw=tIn.value.trim();tIn.value="";
     if(!raw)return;
-    tp("objbox#> "+raw,"rgba(255,255,255,0.5)");
+    tp("obj://> "+raw,"rgba(255,255,255,0.5)");
     hist.push(raw);histIdx=hist.length;
     try{runCmd(raw)}catch(err){tp("error: "+err.message,"rgba(255,80,80,0.8)")}
   } else if(e.key==="ArrowUp"){e.preventDefault();if(histIdx>0){histIdx--;tIn.value=hist[histIdx]}}
@@ -153,34 +153,52 @@ function runCmd(raw){
 
   if(cmd==="help"){
     tp("--- OBJBOX II ---",tc(0.9));tp("");
-    tp(" SYSTEM: help, clear, echo, reload, about, uptime, fps");
-    tp(" DISPLAY: theme <1-5>, shape <name>, particles <n>");
-    tp(" AUDIO: bgm <on|off>");
-    tp(" VOID: transmit <w> <m>, whoami");
-    tp(" FILESYSTEM: pwd, ls, cd, cat, mkdir, touch, echo, cp, mv, rm, tree");
-    tp(" PACKAGES: void intrude <pkg>, void remove, void list, void search <q>");
-    tp(" SCRIPTING: voidscript (studio) or run <code>");
+    tp(" CORE: help, clear, echo, reboot, manifesto, uptime, fps");
+    tp(" DISPLAY: vibe <1-5>, morph <name>, dust <n>");
+    tp(" AUDIO: drone <on|off>");
+    tp(" VOID: shout <who> <msg>, whoami, scan");
+    tp(" FILESYSTEM: pwd, ls, cd, cat, mkdir, touch, rm, tree");
+    tp(" PACKAGES: void intrude/remove/list/search");
+    tp(" SCRIPTING: studio or run <code>");
     tp(" GUI: gui window/label/button/input/check/close/clear");
-    tp(" REACTOR: reactor (or F3)");
+    tp(" REACTOR: reactor (F3)");
     tp("");
   } else if(cmd==="clear"){tOut.innerHTML=""}
   else if(cmd==="echo"){tp(args.join(" "),"rgba(255,255,255,0.5)")}
-  else if(cmd==="theme"){var t=parseInt(args[0]);if(t>=1&&t<=5){curTheme=t;tIn.style.color=tc(0.8);tIn.style.caretColor=tc(0.8);tp("theme: "+themes[t].n,tc(0.7));showThI(themes[t].n)}else tp("usage: theme <1-5>","rgba(255,80,80,0.8)")}
-  else if(cmd==="shape"){var s=(args[0]||"").toLowerCase();if(s==="cube"){curShape=0;tp("shape: cube",tc(0.7))}else if(s==="sphere"){curShape=1;tp("shape: sphere",tc(0.7))}else tp("shapes: cube, sphere","rgba(255,255,255,0.4)")}
-  else if(cmd==="particles"){particleCount=parseInt(args[0])||150;initP();tp("particles: "+particleCount,tc(0.7))}
-  else if(cmd==="transmit"){
+  else if(cmd==="vibe"||cmd==="theme"){var t=parseInt(args[0]);if(t>=1&&t<=5){curTheme=t;tIn.style.color=tc(0.8);tIn.style.caretColor=tc(0.8);tp("vibe: "+themes[t].n,tc(0.7));showThI(themes[t].n)}else tp("usage: vibe <1-5>","rgba(255,80,80,0.8)")}
+  else if(cmd==="morph"||cmd==="shape"){var s=(args[0]||"").toLowerCase();if(s==="cube"){curShape=0;tp("morph: cube",tc(0.7))}else if(s==="sphere"){curShape=1;tp("morph: sphere",tc(0.7))}else tp("morph: cube, sphere","rgba(255,255,255,0.4)")}
+  else if(cmd==="dust"||cmd==="particles"){particleCount=parseInt(args[0])||150;initP();tp("dust: "+particleCount,tc(0.7))}
+  else if(cmd==="shout"||cmd==="transmit"){
     var who=(args[0]||"").replace(/"/g,""),msg=args.slice(1).join(" ").replace(/"/g,"");
-    if(!who||!msg){tp("usage: transmit <who> <message>","rgba(255,80,80,0.8)");return}
+    if(!who||!msg){tp("usage: shout <who> <message>","rgba(255,80,80,0.8)");return}
     tp(who+": "+msg,"rgba(255,255,255,0.5)");
     if(Math.random()<0.12){var zm=["yo thats crazy but also the egg survives.","sup gang, zen was here.","ngl this void go hard.","yo obj aint even here.","ayy my egg ahh just vibin."];tp("zen: "+zm[Math.floor(Math.random()*zm.length)],"rgba(255,230,0,1)")}
     else{var rs=["the void hears you.","acknowledged.","signal received.","the cube has noted your transmission.","your words echo through nothing."];tp("obj: "+rs[Math.floor(Math.random()*rs.length)],tc(0.6))}
   }
   else if(cmd==="whoami"){tp("you are the intruder.",tc(0.7));tp("you opened the tab. you are here now.","rgba(255,255,255,0.3)")}
+  else if(cmd==="scan"){
+    tp("--- VOID SCAN ---",tc(0.9));
+    tp("webgl: "+(gl?"active":"inactive"),gl?"rgba(80,255,80,0.7)":"rgba(255,80,80,0.7)");
+    tp("particles: "+particleCount,tc(0.6));
+    tp("theme: "+themes[curTheme].n,tc(0.6));
+    tp("shape: "+["cube","sphere"][curShape],tc(0.6));
+    tp("cwd: "+cwd,tc(0.6));
+    tp("uptime: "+Math.floor((Date.now()-t0)/1000)+"s",tc(0.6));
+    tp("view: "+currentView,tc(0.6));
+    var pkgCount=0;for(var k in installed)if(installed[k])pkgCount++;
+    tp("packages: "+pkgCount+" installed",tc(0.6));
+  }
   else if(cmd==="uptime"){var el=Math.floor((Date.now()-t0)/1000),h=Math.floor(el/3600),m=Math.floor((el%3600)/60),s=el%60;tp("uptime: "+h+"h "+m+"m "+s+"s",tc(0.6))}
   else if(cmd==="fps"){tp("fps: "+lastFps,tc(0.6))}
-  else if(cmd==="bgm"){var st=(args[0]||"").toLowerCase();if(st==="on"){drone.volume=0.25;startAudio();tp("bgm: on (0.25)",tc(0.6))}else if(st==="off"){drone.volume=0;tp("bgm: off",tc(0.6))}else tp("usage: bgm <on|off>","rgba(255,80,80,0.8)")}
-  else if(cmd==="reload"){tp("rebooting...","rgba(255,200,50,0.8)");setTimeout(function(){location.reload()},1000)}
-  else if(cmd==="about"){tp("objbox ii v2.0",tc(0.9));tp("rebuilt from nothing.","rgba(255,255,255,0.3)");tp("the old void died. this one is better.","rgba(255,255,255,0.3)")}
+  else if(cmd==="drone"||cmd==="bgm"){var st=(args[0]||"").toLowerCase();if(st==="on"){drone.volume=0.25;startAudio();tp("drone: on (0.25)",tc(0.6))}else if(st==="off"){drone.volume=0;tp("drone: off",tc(0.6))}else tp("usage: drone <on|off>","rgba(255,80,80,0.8)")}
+  else if(cmd==="reboot"||cmd==="reload"){tp("rebooting...","rgba(255,200,50,0.8)");setTimeout(function(){location.reload()},1000)}
+  else if(cmd==="manifesto"||cmd==="about"){
+    tp("objbox ii",tc(0.9));tp("");
+    tp("rebuilt from the ashes of the old void.","rgba(255,255,255,0.4)");
+    tp("the corruption was not a bug. it was a feature.","rgba(255,255,255,0.3)");
+    tp("the encoding was not broken. it was a language.","rgba(255,255,255,0.3)");
+    tp("this is objbox. obj lives here.","rgba(255,255,255,0.3)");tp("");
+  }
   else if(cmd==="reactor"){tp("entering reactor...","rgba(255,100,50,0.7)");setTimeout(function(){switchView("reactor")},500)}
   else if(cmd==="studio"){tp("opening voidstudio...","rgba(200,100,255,0.7)");setTimeout(openStudio,300)}
 
@@ -301,9 +319,9 @@ function runVoidScriptLine(line){
   else if(c==="mkdir"){fsMkdir(a[0])}
   else if(c==="touch"){fsTouch(a[0])}
   else if(c==="rm"){fsRm(a[0])}
-  else if(c==="theme"){var t=parseInt(a[0]);if(t>=1&&t<=5)curTheme=t}
-  else if(c==="shape"){if(a[0]==="cube")curShape=0;else if(a[0]==="sphere")curShape=1}
-  else if(c==="bgm"){if(a[0]==="on"){drone.volume=0.25;startAudio()}else if(a[0]==="off")drone.volume=0}
+  else if(c==="theme"||c==="vibe"){var t=parseInt(a[0]);if(t>=1&&t<=5)curTheme=t}
+  else if(c==="shape"||c==="morph"){if(a[0]==="cube")curShape=0;else if(a[0]==="sphere")curShape=1}
+  else if(c==="bgm"||c==="drone"){if(a[0]==="on"){drone.volume=0.25;startAudio()}else if(a[0]==="off")drone.volume=0}
   else if(c==="gui"){
     var sub=a[0];
     if(sub==="window")guiCreateWin((a[1]||"window").replace(/"/g,""),100+Math.random()*200,100+Math.random()*200,220,160);
@@ -452,7 +470,7 @@ code.addEventListener("keydown",function(e){if(e.key==="Enter"&&e.ctrlKey){e.pre
 // BOOT
 setTimeout(function(){tp("objbox ii initializing...","rgba(255,200,50,0.5)")},500);
 setTimeout(function(){tp("the void has been rebuilt.",tc(0.6))},1500);
-setTimeout(function(){tp("obj is online.",tc(0.8));tp("type \"help\". press 1-5 for themes. F3 for reactor.","rgba(255,255,255,0.2)");tp("");bootDone=true;tIn.focus()},3000);
+setTimeout(function(){tp("obj is online.",tc(0.8));tp("type \"help\". press 1-5 for vibe. F3 for reactor.","rgba(255,255,255,0.2)");tp("");bootDone=true;tIn.focus()},3000);
 
 initP();render();
 })();
