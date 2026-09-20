@@ -32,6 +32,9 @@ canvas#particles{position:fixed;top:0;left:0;width:100vw;height:100vh;display:bl
     <input id="term-field" type="text" spellcheck="false" autocomplete="off" autofocus>
   </div>
 </div>
+<audio id="drone" loop preload="auto">
+  <source src="void_drone.webm" type="audio/webm">
+</audio>
 <script>
 // ============================================
 //  OBJBOX II — THE VOID RETURNS
@@ -45,6 +48,19 @@ var shapeNames = ['cube','sphere','tetra','cyl'];
 var particleCount = 150;
 var bootComplete = false;
 var startTime = Date.now();
+
+// --- AUDIO ---
+var droneEl = document.getElementById('drone');
+droneEl.volume = 0.25;
+var audioStarted = false;
+function startAudio() {
+  if (audioStarted) return;
+  audioStarted = true;
+  droneEl.play().catch(function(){});
+}
+document.addEventListener('click', startAudio, { once: false });
+document.addEventListener('keydown', startAudio, { once: false });
+setTimeout(startAudio, 3500);
 
 // --- THEMES ---
 var themes = {
@@ -113,6 +129,7 @@ function handleCommand(raw) {
     termPrint('  whoami            who are you');
     termPrint('  uptime            how long youve been here');
     termPrint('  fps               show current fps');
+    termPrint('  bgm <on|off>     toggle void drone');
     termPrint('  reload            reboot the void');
     termPrint('  about             about objbox ii');
     termPrint('');
@@ -179,6 +196,11 @@ function handleCommand(raw) {
     termPrint('uptime: ' + h + 'h ' + m + 'm ' + s + 's', getThemeColor(0.6));
   } else if (cmd === 'fps') {
     termPrint('fps: ' + lastFps, getThemeColor(0.6));
+  } else if (cmd === 'bgm') {
+    var state = (args[0]||'').toLowerCase();
+    if (state === 'on') { droneEl.volume = 0.25; startAudio(); termPrint('bgm: on (0.25)', getThemeColor(0.6)); }
+    else if (state === 'off') { droneEl.volume = 0; termPrint('bgm: off', getThemeColor(0.6)); }
+    else { termPrint('usage: bgm <on|off>', 'rgba(255,80,80,0.8)'); }
   } else if (cmd === 'reload') {
     termPrint('rebooting the void...', 'rgba(255,200,50,0.8)');
     setTimeout(function(){ location.reload(); }, 1000);
