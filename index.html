@@ -200,8 +200,11 @@ function showThI(name){thI.textContent="theme: "+name;thI.style.color="rgba(43,2
 
 // AUDIO
 var drone=document.getElementById("drone");var moon1857=document.getElementById("moon1857");drone.volume=0.25;moon1857.volume=0.25;var audioOn=false;var activeTrack=drone;
-function startAudio(){if(audioOn)return;audioOn=true;activeTrack.play().catch(function(){})}
+var audioCtx=null,analyser=null,audioData=null,audioLevel=0,prevAudioLevel=0,bassLevel=0,midLevel=0,highLevel=0;
+function initAudio(){if(audioCtx)return;try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();analyser=audioCtx.createAnalyser();analyser.fftSize=256;analyser.smoothingTimeConstant=0.75;audioData=new Uint8Array(analyser.frequencyBinCount);drone.connect(analyser);moon1857.connect(analyser)}catch(e){}}
+function startAudio(){if(audioOn)return;audioOn=true;initAudio();activeTrack.play().catch(function(){})}
 function switchTrack(t){activeTrack.pause();activeTrack.currentTime=0;activeTrack=t;if(audioOn){t.volume=0.25;t.play().catch(function(){})}}
+function readAudio(){if(!analyser||!audioOn){audioLevel=0;bassLevel=0;midLevel=0;highLevel=0;return}analyser.getByteFrequencyData(audioData);var sum=0,bs=0,ms=0,hs=0;var bins=audioData.length,third=Math.floor(bins/3);for(var i=0;i<bins;i++){var v=audioData[i]/255;sum+=v;if(i<third)bs+=v;else if(i<third*2)ms+=v;else hs+=v}prevAudioLevel=audioLevel;audioLevel=sum/bins;bassLevel=bs/third;midLevel=ms/third;highLevel=hs/(bins-third*2)}
 document.addEventListener("click",startAudio);document.addEventListener("keydown",startAudio);setTimeout(startAudio,3500);
 
 // VIRTUAL FILESYSTEM
@@ -562,7 +565,27 @@ document.addEventListener("wheel",function(e){zZ+=e.deltaY*0.005;zZ=Math.max(-12
 var fc=0,lt=Date.now(),time=0;
 
 // RENDER
-function render(){requestAnimationFrame(render);time+=0.016;if(currentView==="reactor"){renderReactor();return}if(!drag){rY+=vY;rX+=vX;vX*=.97;vY*=.97;if(Math.abs(vX)<.0001)vX=0;if(Math.abs(vY)<.0001)vY=0}fc++;var now=Date.now();if(now-lt>=1000){lastFps=fc;fc=0;lt=now}var el=Math.floor((now-t0)/1000),h=Math.floor(el/3600),m=Math.floor((el%3600)/60),s=el%60;statsEl.textContent="FPS: "+lastFps+" | UP: "+h+"h "+m+"m "+s+"s";var asp=canvas.width/canvas.height,proj=mPersp(Math.PI/4,asp,.1,100),view=mMul(mTrans(0,0,zZ),mMul(mRotY(rY),mRotX(rX)));var t=time;var th=themes[curTheme]||themes[1];gl.clearColor(th.bg[0],th.bg[1],th.bg[2],1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.useProgram(prog);gl.uniform3f(uCam,0,0,-zZ);var oMod=mMul(mMul(mRotX(time*0.05),mRotY(time*0.1)),mRotZ(time*0.03));gl.uniformMatrix4fv(uMVP,false,mMul(mMul(proj,view),oMod));gl.uniformMatrix4fv(uMod,false,oMod);gl.uniformMatrix3fv(uNM,false,mNorm(oMod));gl.uniform1f(uEm,.25);gl.uniform1f(uAl,.35);gl.uniform1f(uInv,0);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);bindM(outerBuf);gl.drawArrays(gl.TRIANGLES,0,36);gl.depthMask(true);gl.uniform1f(uAl,1);for(var i=0;i<innerC.length;i++){var c=innerC[i],oa=t*c.s+c.p,ox=Math.cos(oa)*c.o,oy=Math.sin(oa*.7)*c.o*.5,oz=Math.sin(oa)*c.o,iMod=mMul(mMul(mTrans(ox,oy,oz),mMul(mMul(mRotX(t*c.sp),mRotY(t*c.sp*.7)),mRotZ(t*c.sp*.3))),mScale(c.sc,c.sc,c.sc));gl.uniformMatrix4fv(uMVP,false,mMul(mMul(proj,view),iMod));gl.uniformMatrix4fv(uMod,false,iMod);gl.uniformMatrix3fv(uNM,false,mNorm(iMod));gl.uniform1f(uEm,.35);gl.uniform1f(uAl,.95);gl.uniform1f(uInv,0);bindM(iBufs[i]);gl.drawArrays(gl.TRIANGLES,0,iCnts[i])}drawP()}
+var vignetteEl=null;
+function render(){requestAnimationFrame(render);time+=0.016;readAudio();if(currentView==="reactor"){renderReactor();return}if(!drag){rY+=vY;rX+=vX;vX*=.97;vY*=.97;if(Math.abs(vX)<.0001)vX=0;if(Math.abs(vY)<.0001)vY=0}fc++;var now=Date.now();if(now-lt>=1000){lastFps=fc;fc=0;lt=now}var el=Math.floor((now-t0)/1000),h=Math.floor(el/3600),m=Math.floor((el%3600)/60),s=el%60;statsEl.textContent="FPS: "+lastFps+" | UP: "+h+"h "+m+"m "+s+"s";
+var asp=canvas.width/canvas.height,proj=mPersp(Math.PI/4,asp,.1,100),view=mMul(mTrans(0,0,zZ),mMul(mRotY(rY),mRotX(rX)));var t=time;var th=themes[curTheme]||themes[1];
+var isMoon=activeTrack===moon1857&&audioOn;var bass=isMoon?bassLevel:0,mid=isMoon?midLevel:0,high=isMoon?highLevel:0,lvl=isMoon?audioLevel:0;
+var pulse=isMoon?1+lvl*0.6:1;var bassPulse=isMoon?1+bass*0.8:1;var glowAdd=isMoon?lvl*0.8:0;var shakeAmt=isMoon?bass*3:0;
+gl.clearColor(th.bg[0],th.bg[1],th.bg[2],1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.useProgram(prog);gl.uniform3f(uCam,0,0,-zZ);
+var shakeX=isMoon?(Math.random()-0.5)*shakeAmt*0.01:0;var shakeY=isMoon?(Math.random()-0.5)*shakeAmt*0.01:0;
+var oMod=mMul(mMul(mRotX(time*0.05+shakeX),mRotY(time*0.1+shakeY)),mRotZ(time*0.03));
+var outerScale=pulse;var oScaleMat=mScale(outerScale,outerScale,outerScale);var oModScaled=mMul(oMod,oScaleMat);
+gl.uniformMatrix4fv(uMVP,false,mMul(mMul(proj,view),oModScaled));gl.uniformMatrix4fv(uMod,false,oModScaled);gl.uniformMatrix3fv(uNM,false,mNorm(oModScaled));
+gl.uniform1f(uEm,.25+glowAdd);gl.uniform1f(uAl,.35+lvl*0.3);gl.uniform1f(uInv,0);
+gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);bindM(outerBuf);gl.drawArrays(gl.TRIANGLES,0,36);gl.depthMask(true);
+gl.uniform1f(uAl,1);
+for(var i=0;i<innerC.length;i++){var c=innerC[i],oa=t*c.s+c.p,ox=Math.cos(oa)*c.o,oy=Math.sin(oa*.7)*c.o*.5,oz=Math.sin(oa)*c.o;
+var sc=c.sc*(isMoon?1+bass*0.5:1);var innerEm=.35+glowAdd;
+var iMod=mMul(mMul(mTrans(ox,oy,oz),mMul(mMul(mRotX(t*c.sp*(isMoon?1+bass*0.3:1)),mRotY(t*c.sp*.7*(isMoon?1+mid*0.3:1))),mRotZ(t*c.sp*.3))),mScale(sc,sc,sc));
+gl.uniformMatrix4fv(uMVP,false,mMul(mMul(proj,view),iMod));gl.uniformMatrix4fv(uMod,false,iMod);gl.uniformMatrix3fv(uNM,false,mNorm(iMod));
+gl.uniform1f(uEm,innerEm);gl.uniform1f(uAl,.95);gl.uniform1f(uInv,0);bindM(iBufs[i]);gl.drawArrays(gl.TRIANGLES,0,iCnts[i])}
+if(isMoon){if(!vignetteEl){vignetteEl=document.getElementById("vig")}if(vignetteEl){var vintensity=Math.min(0.9,0.7+bass*0.4);vignetteEl.style.background="radial-gradient(ellipse at center,transparent 30%,rgba("+Math.floor(bass*255)+","+Math.floor(high*30)+",0,"+vintensity+") 100%)";if(bass>0.7){vignetteEl.style.background="radial-gradient(ellipse at center,transparent 20%,rgba("+Math.floor(bass*255)+",0,"+Math.floor(high*80)+","+vintensity+") 100%)"}}
+for(var i=0;i<parts.length;i++){parts[i].sz=(Math.random()*4+2.5)*(1+bass*0.8)}}
+else{if(vignetteEl)vignetteEl.style.background="radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,0.7) 100%)"}drawP()}
 
 // KEYBOARD
 var currentView="void";
