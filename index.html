@@ -11,7 +11,6 @@ body{overflow:hidden;background:#000;cursor:grab}
 body.dragging{cursor:grabbing}
 canvas#gl{position:fixed;top:0;left:0;z-index:0;display:block}
 canvas#rCv{position:fixed;top:0;left:0;width:100%;height:100%;display:none;z-index:1;background:#000}
-canvas#pcv{position:fixed;top:0;left:0;width:100%;height:100%;display:block;pointer-events:none;z-index:20}
 #vig{position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:15;background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,0.7) 100%)}
 #odFlash{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:25;opacity:0;transition:opacity 0.05s}
 #odShake{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0}
@@ -120,7 +119,6 @@ canvas#pcv{position:fixed;top:0;left:0;width:100%;height:100%;display:block;poin
 <body>
 <canvas id="gl"></canvas>
 <canvas id="rCv"></canvas>
-<canvas id="pcv"></canvas>
 <div id="vig"></div>
 <div id="stats"></div>
 <div id="thI"></div>
@@ -302,7 +300,7 @@ function runCmd(raw){
   else if(cmd==="echo"){tp(args.join(" "),"rgba(255,255,255,0.5)")}
   else if(cmd==="vibe"||cmd==="theme"){var t=parseInt(args[0]);if(t>=1&&t<=5){curTheme=t;rebuild(curShape);tIn.style.color=tc(0.8);tIn.style.caretColor=tc(0.8);tp("vibe: "+themes[t].n,tc(0.7));showThI(themes[t].n)}else tp("usage: vibe <1-5>","rgba(255,80,80,0.8)")}
   else if(cmd==="morph"||cmd==="shape"){var s=(args[0]||"").toLowerCase();if(s==="cube"){curShape="cube";rebuild(curShape);tp("morph: cube",tc(0.7))}else if(s==="sphere"){curShape="sphere";rebuild(curShape);tp("morph: sphere",tc(0.7))}else tp("morph: cube, sphere","rgba(255,255,255,0.4)")}
-  else if(cmd==="dust"||cmd==="particles"){particleCount=parseInt(args[0])||150;initP();tp("dust: "+particleCount,tc(0.7))}
+  else if(cmd==="dust"||cmd==="particles"){particleCount=parseInt(args[0])||150;initParticles();tp("dust: "+particleCount,tc(0.7))}
   else if(cmd==="shout"||cmd==="transmit"){
     var who=(args[0]||"").replace(/"/g,""),msg=args.slice(1).join(" ").replace(/"/g,"");
     if(!who||!msg){tp("usage: shout <who> <message>","rgba(255,80,80,0.8)");return}
@@ -495,11 +493,69 @@ setTimeout(scheduleNextWhisper,3500);
 var clickN=0;
 document.addEventListener("click",function(e){if(!bootDone||e.target.tagName==="INPUT")return;var msgs=["you clicked the cube. the cube felt that.","ow.","curiosity. the void respects that.","the cube is not a button. but here we are.","click again. i dare you.","the void is flattered.","stop that.","every click is recorded.","you and the cube have a connection now.","the inner cubes noticed that."];tp("obj: "+msgs[clickN%msgs.length],tc(0.5));clickN++});
 
-// PARTICLES
-var pCvs=document.getElementById("pcv"),pCtx=pCvs.getContext("2d"),parts=[];
-function resizeP(){pCvs.width=window.innerWidth;pCvs.height=window.innerHeight}
-function initP(){parts=[];for(var i=0;i<particleCount;i++)parts.push({x:Math.random()*window.innerWidth,y:Math.random()*window.innerHeight,vx:(Math.random()-0.5)*0.5,vy:(Math.random()-0.5)*0.5,sz:Math.random()*5+4,a:Math.random()*0.4+0.5,c:Math.random()<0.5?"t":(Math.random()<0.5?"p":"q")})}
-function drawP(){pCtx.clearRect(0,0,pCvs.width,pCvs.height);var tc2=themes[curTheme].p;var isM=activeTrack===moon1857&&audioOn&&odActive;var bass2=isM?bassLevel:0;var lvl2=isM?audioLevel:0;for(var i=0;i<parts.length;i++){var pp=parts[i];pp.x+=pp.vx*(isM?1+bass2*4:1);pp.y+=pp.vy*(isM?1+bass2*4:1);if(pp.x<0)pp.x=pCvs.width;if(pp.x>pCvs.width)pp.x=0;if(pp.y<0)pp.y=pCvs.height;if(pp.y>pCvs.height)pp.y=0;var drawSz=isM?pp.sz*(3+bass2*5):pp.sz;var drawA=isM?Math.min(1,pp.a+0.3+lvl2*0.3):pp.a;if(isM){var hue=Math.floor((Date.now()*0.2+i*40)%360);pCtx.fillStyle="hsla("+hue+",100%,"+(55+lvl2*25)+"%,"+drawA+")";pCtx.beginPath();pCtx.arc(pp.x,pp.y,drawSz,0,Math.PI*2);pCtx.fill();pCtx.globalAlpha=drawA*0.4;pCtx.fillStyle="hsla("+hue+",100%,80%,"+drawA*0.5+")";pCtx.beginPath();pCtx.arc(pp.x,pp.y,drawSz*2.5,0,Math.PI*2);pCtx.fill();pCtx.globalAlpha=1}else{var col;if(pp.c==="t")col="rgba("+tc2[0]+","+tc2[1]+","+tc2[2]+","+drawA+")";else if(pp.c==="p")col="rgba(170,80,255,"+drawA+")";else col="rgba(255,80,180,"+drawA+")";pCtx.fillStyle=col;pCtx.beginPath();pCtx.arc(pp.x,pp.y,drawSz,0,Math.PI*2);pCtx.fill()}}}
+// PARTICLES (WebGL)
+var parts=[];
+var pVS='attribute vec3 aPos;attribute vec4 aPC;uniform mat4 uVP;uniform float uSZ;varying vec4 vC;void main(){gl_Position=uVP*vec4(aPos,1.0);gl_PointSize=uSZ;vC=aPC;}';
+var pFS='precision mediump float;varying vec4 vC;void main(){float d=length(gl_PointCoord-vec2(0.5));if(d>0.5)discard;float a=1.0-smoothstep(0.2,0.5,d);gl_FragColor=vec4(vC.rgb,vC.a*a);}';
+var pProg,pABuf,pPBuf,pSzU,pVPU;
+function initParticles(){
+  pProg=mkP(gl,pVS,pFS);
+  pSzU=gl.getUniformLocation(pProg,'uSZ');
+  pVPU=gl.getUniformLocation(pProg,'uVP');
+  var aP=gl.getAttribLocation(pProg,'aPos');
+  var aC=gl.getAttribLocation(pProg,'aPC');
+  pABuf=gl.createBuffer();pPBuf=gl.createBuffer();
+  parts=[];
+  for(var i=0;i<particleCount;i++){
+    var h=Math.random()*2-1;
+    parts.push({x:(Math.random()-0.5)*16,y:(Math.random()-0.5)*16,z:(Math.random()-0.5)*16,
+    vx:(Math.random()-0.5)*0.01,vy:(Math.random()-0.5)*0.01,vz:(Math.random()-0.5)*0.01,
+    r:0.3+Math.random()*0.7,g:0.3+Math.random()*0.7,b:0.8+Math.random()*0.2,
+    a:0.3+Math.random()*0.5,sz:2+Math.random()*4,ph:Math.random()*Math.PI*2})
+  }
+}
+function drawParticles(t,isM,bass,lvl){
+  if(!pProg)return;
+  var n=parts.length,pos=new Float32Array(n*3),col=new Float32Array(n*4);
+  var spd=isM?1+bass*5:1;
+  for(var i=0;i<n;i++){
+    var pp=parts[i];
+    pp.x+=pp.vx*spd;pp.y+=pp.vy*spd;pp.z+=pp.vz*spd;
+    if(isM){pp.x+=(Math.random()-0.5)*0.08*bass;pp.y+=(Math.random()-0.5)*0.08*bass;pp.z+=(Math.random()-0.5)*0.08*bass}
+    if(Math.abs(pp.x)>8)pp.vx*=-1;if(Math.abs(pp.y)>8)pp.vy*=-1;if(Math.abs(pp.z)>8)pp.vz*=-1;
+    pos[i*3]=pp.x;pos[i*3+1]=pp.y;pos[i*3+2]=pp.z;
+    if(isM){
+      var hue=(t*60+i*30)%360/360;
+      var c3=hsl2rgb(hue,1,0.5+lvl*0.3);
+      col[i*4]=c3[0];col[i*4+1]=c3[1];col[i*4+2]=c3[2];col[i*4+3]=Math.min(1,pp.a+0.3+lvl*0.4);
+    }else{
+      var th=themes[curTheme]||themes[1];var tc2=th.p;
+      col[i*4]=tc2[0]/255;col[i*4+1]=tc2[1]/255;col[i*4+2]=tc2[2]/255;col[i*4+3]=pp.a;
+    }
+  }
+  gl.useProgram(pProg);
+  gl.bindBuffer(gl.ARRAY_BUFFER,pABuf);gl.bufferData(gl.ARRAY_BUFFER,pos,gl.DYNAMIC_DRAW);
+  gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,0,0);
+  gl.bindBuffer(gl.ARRAY_BUFFER,pPBuf);gl.bufferData(gl.ARRAY_BUFFER,col,gl.DYNAMIC_DRAW);
+  gl.enableVertexAttribArray(1);gl.vertexAttribPointer(1,4,gl.FLOAT,false,0,0);
+  var asp=canvas.width/canvas.height;
+  var vp=mPersp(Math.PI/4,asp,.1,100);
+  gl.uniformMatrix4fv(pVPU,false,vp);
+  var sz=isM?(pp.sz||4)*(2+bass*4)*dpr:(pp.sz||4)*dpr;
+  gl.uniform1f(pSzU,sz);
+  gl.disable(gl.DEPTH_TEST);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);
+  gl.drawArrays(gl.POINTS,0,n);
+  gl.enable(gl.DEPTH_TEST);gl.disable(gl.BLEND);
+}
+function hsl2rgb(h,s,l){
+  var r,g,b2;
+  if(s===0){r=g=b2=l}else{
+    function hue2rgb(p,q,t){if(t<0)t+=1;if(t>1)t-=1;if(t<1/6)return p+(q-p)*6*t;if(t<1/2)return q;if(t<2/3)return p+(q-p)*(2/3-t)*6;return p}
+    var q=l<0.5?l*(1+s):l+s-l*s;var p=2*l-q;
+    r=hue2rgb(p,q,h+1/3);g=hue2rgb(p,q,h);b2=hue2rgb(p,q,h-1/3)
+  }
+  return[r,g,b2]
+}
 
 // WEBGL
 var canvas=document.getElementById("gl"),gl=canvas.getContext("webgl",{antialias:true,alpha:false});
@@ -510,7 +566,7 @@ canvas.style.width=window.innerWidth+'px';canvas.style.height=window.innerHeight
 gl.viewport(0,0,canvas.width,canvas.height);
 gl.enable(gl.DEPTH_TEST);gl.enable(gl.CULL_FACE);gl.cullFace(gl.BACK);
 gl.clearColor(0.005,0.005,0.015,1);
-function resize(){canvas.width=window.innerWidth*dpr;canvas.height=window.innerHeight*dpr;canvas.style.width=window.innerWidth+'px';canvas.style.height=window.innerHeight+'px';gl.viewport(0,0,canvas.width,canvas.height);resizeP()}
+function resize(){canvas.width=window.innerWidth*dpr;canvas.height=window.innerHeight*dpr;canvas.style.width=window.innerWidth+'px';canvas.style.height=window.innerHeight+'px';gl.viewport(0,0,canvas.width,canvas.height)}
 window.addEventListener("resize",resize);resize();
 
 // SHADERS
@@ -587,9 +643,10 @@ if(isMoon){var now2=Date.now();if(now2-lastOdRender<100){time+=0.016;return}last
 if(!drag){rY+=vY;rX+=vX;vX*=.97;vY*=.97;if(Math.abs(vX)<.0001)vX=0;if(Math.abs(vY)<.0001)vY=0}fc++;var now=Date.now();if(now-lt>=1000){lastFps=fc;fc=0;lt=now}var el=Math.floor((now-t0)/1000),h=Math.floor(el/3600),m=Math.floor((el%3600)/60),s=el%60;statsEl.textContent="FPS: "+lastFps+" | UP: "+h+"h "+m+"m "+s+"s"+(isMoon?" | OVERDOSE":"");
 var asp=canvas.width/canvas.height,proj=mPersp(Math.PI/4,asp,.1,100),view=mMul(mTrans(0,0,zZ),mMul(mRotY(rY),mRotX(rX)));var t=time;var th=themes[curTheme]||themes[1];
 var bass=isMoon?bassLevel:0,mid=isMoon?midLevel:0,high=isMoon?highLevel:0,lvl=isMoon?audioLevel:0;
-var speedMult=isMoon?1+bass*3:1;var pulse=isMoon?1+lvl*1.0:1;var glowAdd=isMoon?lvl*1.2:0;var shakeAmt=isMoon?bass*40:0;
+var speedMult=isMoon?1+bass*3:1;var pulse=isMoon?1+lvl*1.0:1;var glowAdd=isMoon?lvl*1.2:0;
+var shakeAmt=isMoon?bass*80:0;
+var shakeX=isMoon?(Math.random()-0.5)*shakeAmt*0.04:0;var shakeY=isMoon?(Math.random()-0.5)*shakeAmt*0.04:0;
 gl.clearColor(th.bg[0],th.bg[1],th.bg[2],1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.useProgram(prog);gl.uniform3f(uCam,0,0,-zZ);
-var shakeX=isMoon?(Math.random()-0.5)*shakeAmt*0.02:0;var shakeY=isMoon?(Math.random()-0.5)*shakeAmt*0.02:0;
 var oMod=mMul(mMul(mRotX(time*0.05*speedMult+shakeX),mRotY(time*0.1*speedMult+shakeY)),mRotZ(time*0.03*speedMult));
 var outerScale=pulse;var oScaleMat=mScale(outerScale,outerScale,outerScale);var oModScaled=mMul(oMod,oScaleMat);
 gl.uniformMatrix4fv(uMVP,false,mMul(mMul(proj,view),oModScaled));gl.uniformMatrix4fv(uMod,false,oModScaled);gl.uniformMatrix3fv(uNM,false,mNorm(oModScaled));
@@ -601,19 +658,21 @@ var sc=c.sc*(isMoon?1+bass*0.4:1);var innerEm=.35+glowAdd;
 var iMod=mMul(mMul(mTrans(ox,oy,oz),mMul(mMul(mRotX(t*c.sp*speedMult),mRotY(t*c.sp*.7*speedMult)),mRotZ(t*c.sp*.3*speedMult))),mScale(sc,sc,sc));
 gl.uniformMatrix4fv(uMVP,false,mMul(mMul(proj,view),iMod));gl.uniformMatrix4fv(uMod,false,iMod);gl.uniformMatrix3fv(uNM,false,mNorm(iMod));
 gl.uniform1f(uEm,innerEm);gl.uniform1f(uAl,.95);gl.uniform1f(uInv,0);bindM(iBufs[i]);gl.drawArrays(gl.TRIANGLES,0,iCnts[i])}
+drawParticles(t,isMoon,bass,lvl);
 if(isMoon){if(!vignetteEl)vignetteEl=document.getElementById("vig");
 if(vignetteEl){var vr=Math.floor(bass*255),vb=Math.floor(mid*80),vi=Math.min(0.95,0.5+bass*0.5);vignetteEl.style.background="radial-gradient(ellipse at center,transparent "+Math.floor(25-bass*20)+"%,rgba("+vr+",0,"+vb+","+vi+") 100%)"}
-var shakeX=(Math.random()-0.5)*shakeAmt*2.5;var shakeY=(Math.random()-0.5)*shakeAmt*2.5;var shakeR=(Math.random()-0.5)*shakeAmt*0.4;var shakeS=1+bass*0.06;
-var shakeT="translate("+shakeX+"px,"+shakeY+"px) rotate("+shakeR+"deg) scale("+shakeS+")";
+var shakeR=(Math.random()-0.5)*shakeAmt*0.12;var shakeS=1+bass*0.12;
+var shakeT="translate("+shakeX*15+"px,"+shakeY*15+"px) rotate("+shakeR+"deg) scale("+shakeS+")";
 canvas.style.transform=shakeT;if(vignetteEl)vignetteEl.style.transform=shakeT;
 document.getElementById("odFlash").style.transform=shakeT;
 document.getElementById("objText").style.transform=shakeT;
+var termEls=document.querySelectorAll("#terminal,#tOut,#tRow");
+for(var ti=0;ti<termEls.length;ti++)termEls[ti].style.transform=shakeT;
 document.body.style.filter="saturate("+(2+lvl*3)+") brightness("+(1.1+bass*0.3)+") contrast("+(1.2+lvl*0.5)+") hue-rotate("+Math.floor(t*60+bass*90)%360+"deg)";
-var fNow=Date.now();if(bass>0.6&&fNow-lastFlash>150){lastFlash=fNow;var fc2=["rgba(255,0,0,0.35)","rgba(255,255,255,0.3)","rgba(255,50,0,0.35)","rgba(200,0,255,0.25)","rgba(255,0,80,0.3)"];odFlash.style.background=fc2[Math.floor(Math.random()*fc2.length)];odFlash.style.opacity="1";setTimeout(function(){odFlash.style.opacity="0"},80)}}
-else{document.body.style.filter="";canvas.style.transform="";if(vignetteEl)vignetteEl.style.transform="";document.getElementById("odFlash").style.transform="";document.getElementById("objText").style.transform="";odFlash.style.opacity="0";if(vignetteEl)vignetteEl.style.background="radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,0.7) 100%)"}}
+var fNow=Date.now();if(bass>0.6&&fNow-lastFlash>150){lastFlash=fNow;var fc2=["rgba(255,0,0,0.5)","rgba(255,255,255,0.4)","rgba(255,50,0,0.5)","rgba(200,0,255,0.4)","rgba(255,0,80,0.45)"];odFlash.style.background=fc2[Math.floor(Math.random()*fc2.length)];odFlash.style.opacity="1";setTimeout(function(){odFlash.style.opacity="0"},80)}}
+else{document.body.style.filter="";canvas.style.transform="";if(vignetteEl)vignetteEl.style.transform="";document.getElementById("odFlash").style.transform="";document.getElementById("objText").style.transform="";var termEls=document.querySelectorAll("#terminal,#tOut,#tRow");for(var ti=0;ti<termEls.length;ti++)termEls[ti].style.transform="";odFlash.style.opacity="0";if(vignetteEl)vignetteEl.style.background="radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,0.7) 100%)"}}
 
-// PARTICLES - separate loop so they always update
-function pLoop(){requestAnimationFrame(pLoop);drawP()}
+// PARTICLES - drawn in WebGL now, no separate loop needed
 
 // KEYBOARD
 var currentView="void";
@@ -624,8 +683,8 @@ document.getElementById("navR").addEventListener("click",function(){switchView("
 document.getElementById("navL").addEventListener("click",function(){switchView("void")});
 
 // VIEW SWITCHING
-var glCanvas=document.getElementById("gl"),rCv=document.getElementById("rCv"),rPanel=document.getElementById("rPanel"),rTerm=document.getElementById("rTerminal"),navR=document.getElementById("navR"),navL=document.getElementById("navL"),terminal=document.getElementById("terminal"),pcv=document.getElementById("pcv");
-function switchView(v){currentView=v;if(v==="reactor"){glCanvas.style.display="none";pcv.style.display="none";document.getElementById("vig").style.display="none";terminal.style.display="none";navR.style.display="none";navL.style.display="flex";rCv.style.display="block";rPanel.style.display="block";rTerm.style.display="flex";initReactorGL();rPrint("reactor online. type \"help\".","rgba(255,100,50,0.7)");document.getElementById("rtIn").focus()}else{rCv.style.display="none";rPanel.style.display="none";rTerm.style.display="none";navL.style.display="none";navR.style.display="flex";glCanvas.style.display="block";pcv.style.display="block";document.getElementById("vig").style.display="block";terminal.style.display="flex";tIn.focus()}}
+var glCanvas=document.getElementById("gl"),rCv=document.getElementById("rCv"),rPanel=document.getElementById("rPanel"),rTerm=document.getElementById("rTerminal"),navR=document.getElementById("navR"),navL=document.getElementById("navL"),terminal=document.getElementById("terminal");
+function switchView(v){currentView=v;if(v==="reactor"){glCanvas.style.display="none";document.getElementById("vig").style.display="none";terminal.style.display="none";navR.style.display="none";navL.style.display="flex";rCv.style.display="block";rPanel.style.display="block";rTerm.style.display="flex";initReactorGL();rPrint("reactor online. type \"help\".","rgba(255,100,50,0.7)");document.getElementById("rtIn").focus()}else{rCv.style.display="none";rPanel.style.display="none";rTerm.style.display="none";navL.style.display="none";navR.style.display="flex";glCanvas.style.display="block";document.getElementById("vig").style.display="block";terminal.style.display="flex";tIn.focus()}}
 
 // REACTOR
 var R={temp:280,pressure:14.5,power:15,rodPos:30,coolantOn:false,xenon:2,iodine:3,flux:0.5,scramActive:false,scramTimer:0,running:true,history:[],lastTick:Date.now(),ambientTemp:25};
@@ -744,7 +803,7 @@ var fg=document.createElement("div");fg.style.cssText="position:fixed;top:0;left
 document.body.appendChild(fg);
 })();
 
-initP();pLoop();render();
+initParticles();render();
 })();
 </script>
 </body>
