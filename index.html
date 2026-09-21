@@ -14,10 +14,11 @@ canvas#rCv{position:fixed;top:0;left:0;width:100%;height:100%;display:none;z-ind
 canvas#pcv{position:fixed;top:0;left:0;width:100%;height:100%;display:block;pointer-events:none;z-index:20}
 #vig{position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:15;background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,0.7) 100%)}
 #odFlash{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:25;opacity:0;transition:opacity 0.05s}
-#odWarn{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column;background:rgba(0,0,0,0.92)}
-#odWarn .tw-title{color:#ff0000;font-family:'Consolas',monospace;font-size:36px;letter-spacing:6px;text-shadow:0 0 30px rgba(255,0,0,0.8);margin-bottom:16px;animation:twPulse 0.8s infinite}
-#odWarn .tw-sub{color:rgba(255,100,100,0.8);font-family:'Consolas',monospace;font-size:14px;letter-spacing:2px;margin-bottom:30px}
-#odWarn .tw-icon{font-size:48px;margin-bottom:20px;animation:twBlink 1.2s infinite}
+#odWarn{position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column;background:#000}
+#odWarn .tw-title{color:#ff0000;font-family:'Consolas',monospace;font-size:42px;letter-spacing:8px;text-shadow:0 0 40px rgba(255,0,0,1),0 0 80px rgba(255,0,0,0.6);margin-bottom:20px;animation:twPulse 0.6s infinite}
+#odWarn .tw-sub{color:rgba(255,80,80,1);font-family:'Consolas',monospace;font-size:16px;letter-spacing:3px;margin-bottom:24px}
+#odWarn .tw-icon{font-size:60px;margin-bottom:24px;animation:twBlink 1s infinite}
+#odWarn .tw-bar{position:absolute;bottom:0;left:0;height:4px;background:#ff0000;box-shadow:0 0 20px #ff0000}
 @keyframes twPulse{0%,100%{opacity:1;text-shadow:0 0 30px rgba(255,0,0,0.8)}50%{opacity:0.6;text-shadow:0 0 60px rgba(255,0,0,1)}}
 @keyframes twBlink{0%,49%{opacity:1}50%,100%{opacity:0.2}}
 #rPanel{position:fixed;top:20px;right:20px;width:220px;background:rgba(10,5,0,0.88);border:1px solid rgba(255,80,30,0.25);border-radius:8px;z-index:50;font-family:'Consolas',monospace;font-size:11px;color:rgba(255,140,50,0.8);padding:12px;display:none}
@@ -188,7 +189,7 @@ canvas#pcv{position:fixed;top:0;left:0;width:100%;height:100%;display:block;poin
 </div>
 </div>
 <div id="odFlash"></div>
-<div id="odWarn"><div class="tw-icon">⚠</div><div class="tw-title">PHOTOSENSITIVE WARNING</div><div class="tw-sub">flashing lights and strobe effects ahead</div><div class="tw-sub" style="opacity:0.4;font-size:12px">moon1857 overdose mode activates in <span id="twCountdown">3</span>s</div></div>
+<div id="odWarn"><div class="tw-icon">⚠</div><div class="tw-title">PHOTOSENSITIVE WARNING</div><div class="tw-sub">flashing lights and strobe effects ahead</div><div class="tw-sub" style="opacity:0.5;font-size:13px">moon1857 overdose mode activates in <span id="twCountdown">3</span>s</div><div class="tw-bar" id="twBar" style="width:100%"></div></div>
 <audio id="drone" loop preload="auto"><source src="void_drone.webm" type="audio/webm"></audio>
 <audio id="moon1857" loop preload="auto"><source src="moon_rot_1857.mp3" type="audio/mpeg"></audio>
 <script>
@@ -210,12 +211,12 @@ function showThI(name){thI.textContent="theme: "+name;thI.style.color="rgba(43,2
 // AUDIO
 var drone=document.getElementById("drone");var moon1857=document.getElementById("moon1857");drone.volume=0.25;moon1857.volume=0.25;var audioOn=false;var activeTrack=drone;
 var audioCtx=null,analyser=null,audioData=null,audioLevel=0,prevAudioLevel=0,bassLevel=0,midLevel=0,highLevel=0;
-var odFlash=document.getElementById("odFlash"),odWarn=document.getElementById("odWarn"),twCountdown=document.getElementById("twCountdown");
+var odFlash=document.getElementById("odFlash"),odWarn=document.getElementById("odWarn"),twCountdown=document.getElementById("twCountdown"),twBar=document.getElementById("twBar");
 var odActive=false,odWarnTimer=null,odLastFlash=0;
 function initAudio(){if(audioCtx)return;try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();analyser=audioCtx.createAnalyser();analyser.fftSize=256;analyser.smoothingTimeConstant=0.75;audioData=new Uint8Array(analyser.frequencyBinCount);drone.connect(analyser);moon1857.connect(analyser)}catch(e){}}
 function startAudio(){if(audioOn)return;audioOn=true;initAudio();activeTrack.play().catch(function(){})}
 function switchTrack(t){activeTrack.pause();activeTrack.currentTime=0;activeTrack=t;if(audioOn){t.volume=0.25;t.play().catch(function(){})}if(t===moon1857){showOdWarn()}else{hideOdWarn()}}
-function showOdWarn(){odActive=false;odWarn.style.display="flex";var cd=3;twCountdown.textContent=cd;odWarnTimer=setInterval(function(){cd--;twCountdown.textContent=cd;if(cd<=0){clearInterval(odWarnTimer);odWarn.style.display="none";odActive=true}},1000)}
+function showOdWarn(){odActive=false;odWarn.style.display="flex";odWarn.style.background="#000";var cd=3;twCountdown.textContent=cd;twBar.style.width="100%";var start=Date.now();odWarnTimer=setInterval(function(){var elapsed=Date.now()-start;var pct=Math.max(0,100-elapsed/3000*100);twBar.style.width=pct+"%";cd=3-Math.floor(elapsed/1000);if(cd<0)cd=0;twCountdown.textContent=cd;if(elapsed>=3000){clearInterval(odWarnTimer);odWarn.style.display="none";odActive=true}},30)}
 function hideOdWarn(){if(odWarnTimer)clearInterval(odWarnTimer);odWarn.style.display="none";odActive=false;odFlash.style.opacity="0";document.body.style.filter=""}
 function readAudio(){if(!analyser||!audioOn){audioLevel=0;bassLevel=0;midLevel=0;highLevel=0;return}analyser.getByteFrequencyData(audioData);var sum=0,bs=0,ms=0,hs=0;var bins=audioData.length,third=Math.floor(bins/3);for(var i=0;i<bins;i++){var v=audioData[i]/255;sum+=v;if(i<third)bs+=v;else if(i<third*2)ms+=v;else hs+=v}prevAudioLevel=audioLevel;audioLevel=sum/bins;bassLevel=bs/third;midLevel=ms/third;highLevel=hs/(bins-third*2)}
 document.addEventListener("click",startAudio);document.addEventListener("keydown",startAudio);setTimeout(startAudio,3500);
@@ -497,7 +498,7 @@ document.addEventListener("click",function(e){if(!bootDone||e.target.tagName==="
 var pCvs=document.getElementById("pcv"),pCtx=pCvs.getContext("2d"),parts=[];
 function resizeP(){pCvs.width=window.innerWidth;pCvs.height=window.innerHeight}
 function initP(){parts=[];for(var i=0;i<particleCount;i++)parts.push({x:Math.random()*window.innerWidth,y:Math.random()*window.innerHeight,vx:(Math.random()-0.5)*0.3,vy:(Math.random()-0.5)*0.3,sz:Math.random()*4+2.5,a:Math.random()*0.6+0.2,c:Math.random()<0.5?"t":(Math.random()<0.5?"p":"q")})}
-function drawP(){pCtx.clearRect(0,0,pCvs.width,pCvs.height);var tc2=themes[curTheme].p;var isM=activeTrack===moon1857&&audioOn;var bass2=isM?bassLevel:0;var lvl2=isM?audioLevel:0;pCtx.globalCompositeOperation="lighter";for(var i=0;i<parts.length;i++){var pp=parts[i];pp.x+=pp.vx*(isM?1+bass2*2:1);pp.y+=pp.vy*(isM?1+bass2*2:1);if(pp.x<0)pp.x=pCvs.width;if(pp.x>pCvs.width)pp.x=0;if(pp.y<0)pp.y=pCvs.height;if(pp.y>pCvs.height)pp.y=0;var col;if(pp.c==="t")col=tc2[0]+","+tc2[1]+","+tc2[2];else if(pp.c==="p")col="150,50,200";else col="200,50,150";var drawSz=isM?pp.sz*(1+bass2*1.2):pp.sz;var drawA=isM?Math.min(1,pp.a+lvl2*0.5):pp.a;pCtx.globalAlpha=drawA;pCtx.fillStyle="rgba("+col+",1)";pCtx.beginPath();pCtx.arc(pp.x,pp.y,drawSz,0,Math.PI*2);pCtx.fill()}pCtx.globalCompositeOperation="source-over";pCtx.globalAlpha=1}
+function drawP(){pCtx.clearRect(0,0,pCvs.width,pCvs.height);var tc2=themes[curTheme].p;var isM=activeTrack===moon1857&&audioOn&&odActive;var bass2=isM?bassLevel:0;var lvl2=isM?audioLevel:0;pCtx.globalCompositeOperation="lighter";for(var i=0;i<parts.length;i++){var pp=parts[i];pp.x+=pp.vx*(isM?1+bass2*3:1);pp.y+=pp.vy*(isM?1+bass2*3:1);if(pp.x<0)pp.x=pCvs.width;if(pp.x>pCvs.width)pp.x=0;if(pp.y<0)pp.y=pCvs.height;if(pp.y>pCvs.height)pp.y=0;var col;if(pp.c==="t")col=tc2[0]+","+tc2[1]+","+tc2[2];else if(pp.c==="p")col="150,50,200";else col="200,50,150";if(isM){var hue=Math.floor((Date.now()*0.1+i*30)%360);col=hue+","+Math.floor(100+lvl2*155)+",255"}var drawSz=isM?pp.sz*(2+bass2*3):pp.sz;var drawA=isM?Math.min(1,(pp.a+0.3)+lvl2*0.5):pp.a;pCtx.globalAlpha=drawA;pCtx.fillStyle="rgba("+col+",1)";pCtx.beginPath();pCtx.arc(pp.x,pp.y,drawSz,0,Math.PI*2);pCtx.fill()}pCtx.globalCompositeOperation="source-over";pCtx.globalAlpha=1}
 
 // WEBGL
 var canvas=document.getElementById("gl"),gl=canvas.getContext("webgl",{antialias:true,alpha:false});
@@ -601,9 +602,12 @@ gl.uniformMatrix4fv(uMVP,false,mMul(mMul(proj,view),iMod));gl.uniformMatrix4fv(u
 gl.uniform1f(uEm,innerEm);gl.uniform1f(uAl,.95);gl.uniform1f(uInv,0);bindM(iBufs[i]);gl.drawArrays(gl.TRIANGLES,0,iCnts[i])}
 if(isMoon){if(!vignetteEl)vignetteEl=document.getElementById("vig");
 if(vignetteEl){var vr=Math.floor(bass*255),vb=Math.floor(mid*80),vi=Math.min(0.95,0.5+bass*0.5);vignetteEl.style.background="radial-gradient(ellipse at center,transparent "+Math.floor(25-bass*20)+"%,rgba("+vr+",0,"+vb+","+vi+") 100%)"}
-document.body.style.filter="saturate("+(1+lvl*2)+") brightness("+(1+bass*0.2)+") contrast("+(1+lvl*0.4)+")";if(bass>0.75)document.body.style.filter+=" hue-rotate("+Math.floor(bass*60)+"deg)";
+document.body.style.filter="saturate("+(2+lvl*3)+") brightness("+(1.1+bass*0.3)+") contrast("+(1.2+lvl*0.5)+") hue-rotate("+Math.floor(t*60+bass*90)%360+"deg)";
 var fNow=Date.now();if(bass>0.6&&fNow-lastFlash>150){lastFlash=fNow;var fc2=["rgba(255,0,0,0.35)","rgba(255,255,255,0.3)","rgba(255,50,0,0.35)","rgba(200,0,255,0.25)","rgba(255,0,80,0.3)"];odFlash.style.background=fc2[Math.floor(Math.random()*fc2.length)];odFlash.style.opacity="1";setTimeout(function(){odFlash.style.opacity="0"},80)}}
-else{document.body.style.filter="";odFlash.style.opacity="0";if(vignetteEl)vignetteEl.style.background="radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,0.7) 100%)"}drawP()}
+else{document.body.style.filter="";odFlash.style.opacity="0";if(vignetteEl)vignetteEl.style.background="radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,0.7) 100%)"}}
+
+// PARTICLES - separate loop so they always update
+function pLoop(){requestAnimationFrame(pLoop);drawP()}
 
 // KEYBOARD
 var currentView="void";
@@ -734,7 +738,7 @@ var fg=document.createElement("div");fg.style.cssText="position:fixed;top:0;left
 document.body.appendChild(fg);
 })();
 
-initP();render();
+initP();pLoop();render();
 })();
 </script>
 </body>
