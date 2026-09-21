@@ -11,8 +11,15 @@ body{overflow:hidden;background:#000;cursor:grab}
 body.dragging{cursor:grabbing}
 canvas#gl{position:fixed;top:0;left:0;z-index:0;display:block}
 canvas#rCv{position:fixed;top:0;left:0;width:100%;height:100%;display:none;z-index:1;background:#000}
-canvas#pcv{position:fixed;top:0;left:0;width:100%;height:100%;display:block;pointer-events:none;z-index:5}
+canvas#pcv{position:fixed;top:0;left:0;width:100%;height:100%;display:block;pointer-events:none;z-index:20}
 #vig{position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:15;background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,0.7) 100%)}
+#odFlash{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:25;opacity:0;transition:opacity 0.05s}
+#odWarn{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column;background:rgba(0,0,0,0.92)}
+#odWarn .tw-title{color:#ff0000;font-family:'Consolas',monospace;font-size:36px;letter-spacing:6px;text-shadow:0 0 30px rgba(255,0,0,0.8);margin-bottom:16px;animation:twPulse 0.8s infinite}
+#odWarn .tw-sub{color:rgba(255,100,100,0.8);font-family:'Consolas',monospace;font-size:14px;letter-spacing:2px;margin-bottom:30px}
+#odWarn .tw-icon{font-size:48px;margin-bottom:20px;animation:twBlink 1.2s infinite}
+@keyframes twPulse{0%,100%{opacity:1;text-shadow:0 0 30px rgba(255,0,0,0.8)}50%{opacity:0.6;text-shadow:0 0 60px rgba(255,0,0,1)}}
+@keyframes twBlink{0%,49%{opacity:1}50%,100%{opacity:0.2}}
 #rPanel{position:fixed;top:20px;right:20px;width:220px;background:rgba(10,5,0,0.88);border:1px solid rgba(255,80,30,0.25);border-radius:8px;z-index:50;font-family:'Consolas',monospace;font-size:11px;color:rgba(255,140,50,0.8);padding:12px;display:none}
 #rPanel .rp-title{color:rgba(255,100,40,0.6);font-size:10px;letter-spacing:2px;border-bottom:1px solid rgba(255,80,30,0.15);padding-bottom:4px;margin-bottom:8px}
 .rp-ok{color:rgba(80,255,80,0.8)}.rp-warn{color:rgba(255,255,50,0.8)}.rp-danger{color:rgba(255,80,50,0.9)}
@@ -180,6 +187,8 @@ canvas#pcv{position:fixed;top:0;left:0;width:100%;height:100%;display:block;poin
 </div>
 </div>
 </div>
+<div id="odFlash"></div>
+<div id="odWarn"><div class="tw-icon">⚠</div><div class="tw-title">PHOTOSENSITIVE WARNING</div><div class="tw-sub">flashing lights and strobe effects ahead</div><div class="tw-sub" style="opacity:0.4;font-size:12px">moon1857 overdose mode activates in <span id="twCountdown">3</span>s</div></div>
 <audio id="drone" loop preload="auto"><source src="void_drone.webm" type="audio/webm"></audio>
 <audio id="moon1857" loop preload="auto"><source src="moon_rot_1857.mp3" type="audio/mpeg"></audio>
 <script>
@@ -201,9 +210,13 @@ function showThI(name){thI.textContent="theme: "+name;thI.style.color="rgba(43,2
 // AUDIO
 var drone=document.getElementById("drone");var moon1857=document.getElementById("moon1857");drone.volume=0.25;moon1857.volume=0.25;var audioOn=false;var activeTrack=drone;
 var audioCtx=null,analyser=null,audioData=null,audioLevel=0,prevAudioLevel=0,bassLevel=0,midLevel=0,highLevel=0;
+var odFlash=document.getElementById("odFlash"),odWarn=document.getElementById("odWarn"),twCountdown=document.getElementById("twCountdown");
+var odActive=false,odWarnTimer=null,odLastFlash=0;
 function initAudio(){if(audioCtx)return;try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();analyser=audioCtx.createAnalyser();analyser.fftSize=256;analyser.smoothingTimeConstant=0.75;audioData=new Uint8Array(analyser.frequencyBinCount);drone.connect(analyser);moon1857.connect(analyser)}catch(e){}}
 function startAudio(){if(audioOn)return;audioOn=true;initAudio();activeTrack.play().catch(function(){})}
-function switchTrack(t){activeTrack.pause();activeTrack.currentTime=0;activeTrack=t;if(audioOn){t.volume=0.25;t.play().catch(function(){})}}
+function switchTrack(t){activeTrack.pause();activeTrack.currentTime=0;activeTrack=t;if(audioOn){t.volume=0.25;t.play().catch(function(){})}if(t===moon1857){showOdWarn()}else{hideOdWarn()}}
+function showOdWarn(){odActive=false;odWarn.style.display="flex";var cd=3;twCountdown.textContent=cd;odWarnTimer=setInterval(function(){cd--;twCountdown.textContent=cd;if(cd<=0){clearInterval(odWarnTimer);odWarn.style.display="none";odActive=true}},1000)}
+function hideOdWarn(){if(odWarnTimer)clearInterval(odWarnTimer);odWarn.style.display="none";odActive=false;odFlash.style.opacity="0";document.body.style.filter=""}
 function readAudio(){if(!analyser||!audioOn){audioLevel=0;bassLevel=0;midLevel=0;highLevel=0;return}analyser.getByteFrequencyData(audioData);var sum=0,bs=0,ms=0,hs=0;var bins=audioData.length,third=Math.floor(bins/3);for(var i=0;i<bins;i++){var v=audioData[i]/255;sum+=v;if(i<third)bs+=v;else if(i<third*2)ms+=v;else hs+=v}prevAudioLevel=audioLevel;audioLevel=sum/bins;bassLevel=bs/third;midLevel=ms/third;highLevel=hs/(bins-third*2)}
 document.addEventListener("click",startAudio);document.addEventListener("keydown",startAudio);setTimeout(startAudio,3500);
 
@@ -565,10 +578,10 @@ document.addEventListener("wheel",function(e){zZ+=e.deltaY*0.005;zZ=Math.max(-12
 var fc=0,lt=Date.now(),time=0;
 
 // RENDER
-var vignetteEl=null,lastOverdoseRender=0;
+var vignetteEl=null,lastOdRender=0,lastFlash=0;
 function render(){requestAnimationFrame(render);time+=0.016;readAudio();if(currentView==="reactor"){renderReactor();return}
-var isMoon=activeTrack===moon1857&&audioOn;
-if(isMoon){var now2=Date.now();if(now2-lastOverdoseRender<33){time+=0.016;return}lastOverdoseRender=now2}
+var isMoon=activeTrack===moon1857&&audioOn&&odActive;
+if(isMoon){var now2=Date.now();if(now2-lastOdRender<100){time+=0.016;return}lastOdRender=now2}
 if(!drag){rY+=vY;rX+=vX;vX*=.97;vY*=.97;if(Math.abs(vX)<.0001)vX=0;if(Math.abs(vY)<.0001)vY=0}fc++;var now=Date.now();if(now-lt>=1000){lastFps=fc;fc=0;lt=now}var el=Math.floor((now-t0)/1000),h=Math.floor(el/3600),m=Math.floor((el%3600)/60),s=el%60;statsEl.textContent="FPS: "+lastFps+" | UP: "+h+"h "+m+"m "+s+"s"+(isMoon?" | OVERDOSE":"");
 var asp=canvas.width/canvas.height,proj=mPersp(Math.PI/4,asp,.1,100),view=mMul(mTrans(0,0,zZ),mMul(mRotY(rY),mRotX(rX)));var t=time;var th=themes[curTheme]||themes[1];
 var bass=isMoon?bassLevel:0,mid=isMoon?midLevel:0,high=isMoon?highLevel:0,lvl=isMoon?audioLevel:0;
@@ -588,9 +601,9 @@ gl.uniformMatrix4fv(uMVP,false,mMul(mMul(proj,view),iMod));gl.uniformMatrix4fv(u
 gl.uniform1f(uEm,innerEm);gl.uniform1f(uAl,.95);gl.uniform1f(uInv,0);bindM(iBufs[i]);gl.drawArrays(gl.TRIANGLES,0,iCnts[i])}
 if(isMoon){if(!vignetteEl)vignetteEl=document.getElementById("vig");
 if(vignetteEl){var vr=Math.floor(bass*255),vb=Math.floor(mid*80),vi=Math.min(0.95,0.5+bass*0.5);vignetteEl.style.background="radial-gradient(ellipse at center,transparent "+Math.floor(25-bass*20)+"%,rgba("+vr+",0,"+vb+","+vi+") 100%)"}
-document.body.style.filter="saturate("+(1+lvl*2)+") brightness("+(1+bass*0.2)+") contrast("+(1+lvl*0.4)+")";if(bass>0.75)document.body.style.filter+=" hue-rotate("+Math.floor(bass*60)+"deg)"}
-else{document.body.style.filter="";if(vignetteEl)vignetteEl.style.background="radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,0.7) 100%)"}
-drawP()}
+document.body.style.filter="saturate("+(1+lvl*2)+") brightness("+(1+bass*0.2)+") contrast("+(1+lvl*0.4)+")";if(bass>0.75)document.body.style.filter+=" hue-rotate("+Math.floor(bass*60)+"deg)";
+var fNow=Date.now();if(bass>0.6&&fNow-lastFlash>150){lastFlash=fNow;var fc2=["rgba(255,0,0,0.35)","rgba(255,255,255,0.3)","rgba(255,50,0,0.35)","rgba(200,0,255,0.25)","rgba(255,0,80,0.3)"];odFlash.style.background=fc2[Math.floor(Math.random()*fc2.length)];odFlash.style.opacity="1";setTimeout(function(){odFlash.style.opacity="0"},80)}}
+else{document.body.style.filter="";odFlash.style.opacity="0";if(vignetteEl)vignetteEl.style.background="radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,0.7) 100%)"}drawP()}
 
 // KEYBOARD
 var currentView="void";
