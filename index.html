@@ -59,6 +59,53 @@ canvas#pcv{position:fixed;top:0;left:0;width:100%;height:100%;display:block;poin
 #objText.glitch{animation:objGlitch 0.15s infinite}
 @keyframes objShake{0%{transform:translate(0,0) rotate(0deg)}25%{transform:translate(-2px,1px) rotate(-0.5deg)}50%{transform:translate(2px,-1px) rotate(0.5deg)}75%{transform:translate(-1px,-2px) rotate(-0.3deg)}100%{transform:translate(1px,2px) rotate(0.3deg)}}
 @keyframes objGlitch{0%{transform:translate(0,0);opacity:0.85}20%{transform:translate(-3px,2px);opacity:0.6}40%{transform:translate(3px,-2px);opacity:0.9}60%{transform:translate(-1px,-3px);opacity:0.5}80%{transform:translate(2px,1px);opacity:0.85}100%{transform:translate(0,0);opacity:0.85}}
+#studio{position:fixed;top:0;left:0;right:0;bottom:0;z-index:60;background:rgba(0,0,0,0.95);display:none;flex-direction:column;font-family:'Consolas',monospace;color:rgba(43,208,208,0.9)}
+#studio.active{display:flex}
+#studioTop{display:flex;align-items:center;padding:10px 16px;border-bottom:1px solid rgba(43,208,208,0.2);background:rgba(0,0,0,0.5);flex-shrink:0;gap:16px}
+#studioTop .logo{display:flex;align-items:center;gap:8px}
+#studioTop .logo svg{width:28px;height:28px}
+#studioTop .logo .title{font-size:16px;font-weight:bold;color:rgba(43,208,208,1);letter-spacing:2px}
+#studioTop .logo .sub{font-size:10px;color:rgba(255,255,255,0.3);letter-spacing:1px}
+#studioTop .status{flex:1;display:flex;gap:20px;font-size:11px;color:rgba(255,255,255,0.3)}
+#studioTop .status span{display:flex;align-items:center;gap:4px}
+#studioTop .status .val{color:rgba(43,208,208,0.8)}
+#studioTop .actions{display:flex;gap:8px}
+#studioTop .actions button{background:rgba(43,208,208,0.1);border:1px solid rgba(43,208,208,0.3);border-radius:4px;color:rgba(43,208,208,0.9);font-family:'Consolas',monospace;font-size:11px;padding:6px 14px;cursor:pointer;transition:all 0.2s;letter-spacing:0.5px}
+#studioTop .actions button:hover{background:rgba(43,208,208,0.25);border-color:rgba(43,208,208,0.7)}
+#studioTop .actions button.run{background:rgba(43,208,208,0.2);border-color:rgba(43,208,208,0.5);font-weight:bold}
+#studioTop .actions button.run:hover{background:rgba(43,208,208,0.4)}
+#studioTop .actions button.kill{border-color:rgba(255,80,80,0.4);color:rgba(255,80,80,0.9)}
+#studioTop .actions button.kill:hover{background:rgba(255,80,80,0.2)}
+#studioTop .actions button.help-btn{border-color:rgba(255,200,50,0.4);color:rgba(255,200,50,0.9)}
+#studioBody{display:flex;flex:1;overflow:hidden}
+#studioEditor{display:flex;flex:1;min-width:0}
+#studioLineNums{width:44px;background:rgba(0,0,0,0.3);border-right:1px solid rgba(43,208,208,0.1);padding:12px 0;overflow:hidden;font-size:12px;color:rgba(255,255,255,0.15);text-align:right;user-select:none;flex-shrink:0}
+#studioLineNums .ln{padding:0 8px 0 0;line-height:20px;height:20px}
+#studioCode{flex:1;background:transparent;border:none;outline:none;color:rgba(255,255,255,0.9);font-family:'Consolas',monospace;font-size:12px;line-height:20px;padding:12px;resize:none;tab-size:2;white-space:pre;overflow:auto;scrollbar-width:thin;scrollbar-color:rgba(43,208,208,0.2) transparent}
+#studioCode::-webkit-scrollbar{width:6px}
+#studioCode::-webkit-scrollbar-track{background:transparent}
+#studioCode::-webkit-scrollbar-thumb{background:rgba(43,208,208,0.2);border-radius:3px}
+#studioCode::selection{background:rgba(43,208,208,0.3)}
+#studioPreview{width:45%;border-left:1px solid rgba(43,208,208,0.15);background:rgba(5,10,20,0.6);position:relative;overflow:hidden;display:flex;flex-direction:column}
+#studioPreview .preview-header{padding:8px 12px;border-bottom:1px solid rgba(43,208,208,0.1);font-size:10px;color:rgba(255,255,255,0.25);letter-spacing:1px;flex-shrink:0}
+#studioPreviewArea{flex:1;position:relative;overflow:auto}
+#studioOutput{height:160px;border-top:1px solid rgba(43,208,208,0.15);background:rgba(0,0,0,0.4);display:flex;flex-direction:column;flex-shrink:0}
+#studioOutput .output-header{padding:6px 12px;border-bottom:1px solid rgba(43,208,208,0.1);font-size:10px;color:rgba(255,255,255,0.25);letter-spacing:1px;flex-shrink:0;display:flex;justify-content:space-between}
+.output-tab{background:none;border:none;color:rgba(255,255,255,0.3);font-family:'Consolas',monospace;font-size:10px;padding:4px 10px;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;letter-spacing:0.5px}
+.output-tab.active{color:rgba(43,208,208,0.9);border-bottom-color:rgba(43,208,208,0.6)}
+.output-tab:hover{color:rgba(43,208,208,0.7)}
+#studioOutput .output-body{flex:1;overflow-y:auto;padding:8px 12px;font-size:12px;color:rgba(43,208,208,0.7);white-space:pre-wrap;word-wrap:break-word;scrollbar-width:thin;scrollbar-color:rgba(43,208,208,0.2) transparent}
+.studio-hint{position:absolute;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.15);pointer-events:none}
+#studioHelpPanel{position:absolute;top:50px;right:20px;width:420px;max-height:calc(100vh - 80px);background:rgba(10,10,20,0.96);border:1px solid rgba(255,200,50,0.3);border-radius:8px;z-index:65;display:none;flex-direction:column;font-family:'Consolas',monospace;overflow:hidden}
+#studioHelpPanel.active{display:flex}
+.help-header{padding:10px 14px;border-bottom:1px solid rgba(255,200,50,0.15);color:rgba(255,200,50,0.9);font-size:12px;display:flex;justify-content:space-between;align-items:center;background:rgba(255,200,50,0.05)}
+#studioHelpClose{background:none;border:none;color:rgba(255,255,255,0.4);font-size:18px;cursor:pointer;padding:0 4px}
+#studioHelpClose:hover{color:rgba(255,255,255,0.8)}
+.help-body{padding:12px;overflow-y:auto;max-height:calc(100vh - 140px);scrollbar-width:thin;scrollbar-color:rgba(255,200,50,0.2) transparent}
+.help-section{margin-bottom:12px}
+.help-title{color:rgba(255,200,50,0.8);font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;border-bottom:1px solid rgba(255,200,50,0.1);padding-bottom:2px}
+.help-cmd{font-size:11px;color:rgba(255,255,255,0.5);padding:2px 0;line-height:1.4}
+.help-cmd .hl{color:rgba(43,208,208,0.9)}
 </style>
 </head>
 <body>
@@ -82,7 +129,59 @@ canvas#pcv{position:fixed;top:0;left:0;width:100%;height:100%;display:block;poin
     <input id="tIn" type="text" spellcheck="false" autocomplete="off" autofocus>
   </div>
 </div>
+<div id="studio">
+<div id="studioTop">
+<div class="logo">
+<svg viewBox="0 0 28 28" fill="none"><rect x="4" y="4" width="20" height="20" rx="3" stroke="rgba(43,208,208,0.8)" stroke-width="1.5" fill="rgba(43,208,208,0.05)"/><rect x="9" y="9" width="10" height="10" rx="1.5" stroke="rgba(43,208,208,0.5)" stroke-width="1" fill="rgba(43,208,208,0.03)"/></svg>
+<div><div class="title">VOIDSCRIPT STUDIO</div><div class="sub">sourcebox runtime // sandbox build</div></div>
+</div>
+<div class="status">
+<span>runtime: <span class="val">voidscript/1.0</span></span>
+<span>process: <span class="val" id="studioProcess">idle</span></span>
+<span>theme: <span class="val" id="studioTheme">void</span></span>
+</div>
+<div class="actions">
+<button id="studioRun" class="run">&#9654; RUN</button>
+<button id="studioKill" class="kill">KILL</button>
+<button id="studioHelp" class="help-btn">HELP</button>
+<button id="studioExit">EXIT</button>
+</div>
+</div>
+<div id="studioBody">
+<div id="studioEditor">
+<div id="studioLineNums"></div>
+<textarea id="studioCode" spellcheck="false" placeholder="// voidscript goes here..."></textarea>
+</div>
+<div id="studioPreview">
+<div class="preview-header">PREVIEW</div>
+<div id="studioPreviewArea"></div>
+</div>
+</div>
+<div id="studioOutput">
+<div class="output-header">
+<div style="display:flex;gap:0">
+<button class="output-tab active" data-tab="output" id="stTabOutput">cube# output</button>
+<button class="output-tab" data-tab="terminal" id="stTabTerminal">terminal</button>
+</div>
+<span id="studioOutputCount">0 lines</span>
+</div>
+<div class="output-body" id="studioOutputBody"></div>
+<div class="output-body" id="studioTerminalBody" style="display:none"></div>
+<div class="studio-hint">Ctrl+Enter: run | Ctrl+S: save | Esc: exit</div>
+</div>
+<div id="studioHelpPanel">
+<div class="help-header">voidscript command reference<button id="studioHelpClose">&times;</button></div>
+<div class="help-body">
+<div class="help-section"><div class="help-title">output</div><div class="help-cmd"><span class="hl">print</span> &lt;text&gt; — print text</div><div class="help-cmd"><span class="hl">say</span> &lt;text&gt; — say something</div><div class="help-cmd"><span class="hl">warn</span> &lt;text&gt; — warning</div><div class="help-cmd"><span class="hl">error</span> &lt;text&gt; — error</div></div>
+<div class="help-section"><div class="help-title">system</div><div class="help-cmd"><span class="hl">theme</span> &lt;1-5&gt; — switch vibe</div><div class="help-cmd"><span class="hl">shape</span> &lt;name&gt; — cube/sphere</div><div class="help-cmd"><span class="hl">bgm</span> — toggle music</div><div class="help-cmd"><span class="hl">clear</span> — clear output</div></div>
+<div class="help-section"><div class="help-title">variables</div><div class="help-cmd"><span class="hl">set</span> &lt;var&gt; &lt;val&gt; — set variable</div><div class="help-cmd"><span class="hl">get</span> &lt;var&gt; — get variable</div><div class="help-cmd"><span class="hl">calc</span> &lt;expr&gt; — evaluate math</div></div>
+<div class="help-section"><div class="help-title">filesystem</div><div class="help-cmd"><span class="hl">pwd</span>, <span class="hl">ls</span>, <span class="hl">cd</span>, <span class="hl">cat</span>, <span class="hl">mkdir</span>, <span class="hl">touch</span>, <span class="hl">rm</span></div></div>
+<div class="help-section"><div class="help-title">gui</div><div class="help-cmd"><span class="hl">gui window</span> — create window</div><div class="help-cmd"><span class="hl">gui label</span>/<span class="hl">button</span>/<span class="hl">input</span>/<span class="hl">check</span></div><div class="help-cmd"><span class="hl">gui close</span> — destroy active window</div></div>
+</div>
+</div>
+</div>
 <audio id="drone" loop preload="auto"><source src="void_drone.webm" type="audio/webm"></audio>
+<audio id="moon1857" loop preload="auto"><source src="moon_rot_1857.mp3" type="audio/mpeg"></audio>
 <script>
 (function(){
 "use strict";
@@ -100,8 +199,9 @@ function tp(txt,col){var d=document.createElement("div");if(col)d.style.color=co
 function showThI(name){thI.textContent="theme: "+name;thI.style.color="rgba(43,208,208,0.8)";setTimeout(function(){thI.style.color="rgba(255,255,255,0.15)"},2000)}
 
 // AUDIO
-var drone=document.getElementById("drone");drone.volume=0.25;var audioOn=false;
-function startAudio(){if(audioOn)return;audioOn=true;drone.play().catch(function(){})}
+var drone=document.getElementById("drone");var moon1857=document.getElementById("moon1857");drone.volume=0.25;moon1857.volume=0.25;var audioOn=false;var activeTrack=drone;
+function startAudio(){if(audioOn)return;audioOn=true;activeTrack.play().catch(function(){})}
+function switchTrack(t){activeTrack.pause();activeTrack.currentTime=0;activeTrack=t;if(audioOn){t.volume=0.25;t.play().catch(function(){})}}
 document.addEventListener("click",startAudio);document.addEventListener("keydown",startAudio);setTimeout(startAudio,3500);
 
 // VIRTUAL FILESYSTEM
@@ -143,6 +243,7 @@ flux:{name:"flux",v:"0.8",desc:"the inner cubes drift off orbit",effect:"adds ra
 hollow:{name:"hollow",v:"0.1",desc:"something is wrong with the lights",effect:"dims lights and adds random flicker"},
 signal:{name:"signal",v:"3.0",desc:"the signal grows stronger",effect:"adds faint pulsing glow to outer shell"},
 wraith:{name:"wraith",v:"0.5",desc:"you should not have installed this",effect:"???"},
+ransom:{name:"ransom",v:"6.6.6",desc:"the void has been encrypted",effect:"locks you out of everything. you have been warned."}
 }
 var installed={entropy:true};
 
@@ -171,7 +272,7 @@ function runCmd(raw){
     tp("--- OBJBOX II ---",tc(0.9));tp("");
     tp(" CORE: help, clear, echo, reboot, manifesto, uptime, fps");
     tp(" DISPLAY: vibe <1-5>, morph <name>, dust <n>");
-    tp(" AUDIO: drone <on|off>");
+    tp(" AUDIO: drone <on|off|moon1857|void>");
     tp(" VOID: shout <who> <msg>, whoami, scan");
     tp(" FILESYSTEM: pwd, ls, cd, cat, mkdir, touch, rm, tree");
     tp(" PACKAGES: void intrude/remove/list/search");
@@ -206,7 +307,7 @@ function runCmd(raw){
   }
   else if(cmd==="uptime"){var el=Math.floor((Date.now()-t0)/1000),h=Math.floor(el/3600),m=Math.floor((el%3600)/60),s=el%60;tp("uptime: "+h+"h "+m+"m "+s+"s",tc(0.6))}
   else if(cmd==="fps"){tp("fps: "+lastFps,tc(0.6))}
-  else if(cmd==="drone"||cmd==="bgm"){var st=(args[0]||"").toLowerCase();if(st==="on"){drone.volume=0.25;startAudio();tp("drone: on (0.25)",tc(0.6))}else if(st==="off"){drone.volume=0;tp("drone: off",tc(0.6))}else tp("usage: drone <on|off>","rgba(255,80,80,0.8)")}
+  else if(cmd==="drone"||cmd==="bgm"){var st=(args[0]||"").toLowerCase();if(st==="on"){activeTrack.volume=0.25;startAudio();tp("drone: on ("+((activeTrack===moon1857)?"moon1857":"drone")+")",tc(0.6))}else if(st==="off"){activeTrack.volume=0;tp("drone: off",tc(0.6))}else if(st==="moon1857"||st==="moon"){switchTrack(moon1857);tp("drone: moon1857 — the moon i rot behind",tc(0.6))}else if(st==="void"||st==="default"){switchTrack(drone);tp("drone: void — drone2lp",tc(0.6))}else tp("usage: drone <on|off|moon1857|void>","rgba(255,80,80,0.8)")}
   else if(cmd==="reboot"||cmd==="reload"){tp("rebooting...","rgba(255,200,50,0.8)");setTimeout(function(){location.reload()},1000)}
   else if(cmd==="manifesto"||cmd==="about"){
     tp("objbox ii",tc(0.9));tp("");
@@ -285,6 +386,20 @@ function runCmd(raw){
       var pkg=(args[1]||"").toLowerCase();if(!pkg){tp("usage: void intrude <package>","rgba(255,80,80,0.8)");return}
       if(!packages[pkg]){tp("package not found: "+pkg,"rgba(255,80,80,0.6)");return}
       if(installed[pkg]){tp(pkg+": already installed","rgba(255,255,50,0.7)");return}
+      if(pkg==="ransom"){
+        tp("void intrude "+pkg,"rgba(255,255,255,0.4)");
+        tp("[WARNING] this package cannot be undone.","rgba(255,80,50,0.9)");
+        tp("downloading ransom v6.6.6...","rgba(255,200,50,0.7)");
+        var steps=["decrypting payload...","injecting void keys...","scrambling filesystem...","locking terminal access...","encrypting inner cubes...","finalizing lockout..."];
+        var i=0;
+        var iv=setInterval(function(){
+          if(i<steps.length){tp("  ["+((i+1)*1000)+"ms] "+steps[i],"rgba(255,100,50,0.6)");i++}
+          else{clearInterval(iv);installed[pkg]=true;tp("[INSTALLED] ransom v6.6.6","rgba(255,50,50,1)");tp("  "+packages[pkg].effect,"rgba(255,50,50,0.8)");
+            var els=document.querySelectorAll("#tOut,#rtOut");for(var e=0;e<els.length;e++){els[e].style.filter="hue-rotate(180deg) brightness(0.4)";els[e].style.transition="filter 2s"}
+            setTimeout(function(){document.body.style.transition="filter 3s";document.body.style.filter="grayscale(0.7) brightness(0.5)";tp("","");tp("  pay the price. or don't. the void doesn't care.","rgba(255,50,50,0.5)")},500)}
+          },1000);
+        return;
+      }
       installed[pkg]=true;tp("[installed] "+pkg+" v"+packages[pkg].v,tc(0.7));tp("  "+packages[pkg].effect,"rgba(255,255,255,0.3)");
       rLog("package installed: "+pkg);
     } else if(sub==="remove"||sub==="uninstall"){
@@ -337,7 +452,7 @@ function runVoidScriptLine(line){
   else if(c==="rm"){fsRm(a[0])}
   else if(c==="theme"||c==="vibe"){var t=parseInt(a[0]);if(t>=1&&t<=5){curTheme=t;rebuild(curShape)}}
   else if(c==="shape"||c==="morph"){if(a[0]==="cube")curShape="cube";else if(a[0]==="sphere")curShape="sphere";rebuild(curShape)}
-  else if(c==="bgm"||c==="drone"){if(a[0]==="on"){drone.volume=0.25;startAudio()}else if(a[0]==="off")drone.volume=0}
+  else if(c==="bgm"||c==="drone"){if(a[0]==="on"){activeTrack.volume=0.25;startAudio()}else if(a[0]==="off")activeTrack.volume=0;else if(a[0]==="moon1857"||a[0]==="moon")switchTrack(moon1857);else if(a[0]==="void"||a[0]==="default")switchTrack(drone)}
   else if(c==="gui"){
     var sub=a[0];
     if(sub==="window")guiCreateWin((a[1]||"window").replace(/"/g,""),100+Math.random()*200,100+Math.random()*200,220,160);
@@ -365,7 +480,7 @@ document.addEventListener("click",function(e){if(!bootDone||e.target.tagName==="
 // PARTICLES
 var pCvs=document.getElementById("pcv"),pCtx=pCvs.getContext("2d"),parts=[];
 function resizeP(){pCvs.width=window.innerWidth;pCvs.height=window.innerHeight}
-function initP(){parts=[];for(var i=0;i<particleCount;i++)parts.push({x:Math.random()*window.innerWidth,y:Math.random()*window.innerHeight,vx:(Math.random()-0.5)*0.3,vy:(Math.random()-0.5)*0.3,sz:Math.random()*3+1.5,a:Math.random()*0.6+0.2,c:Math.random()<0.5?"t":(Math.random()<0.5?"p":"q")})}
+function initP(){parts=[];for(var i=0;i<particleCount;i++)parts.push({x:Math.random()*window.innerWidth,y:Math.random()*window.innerHeight,vx:(Math.random()-0.5)*0.3,vy:(Math.random()-0.5)*0.3,sz:Math.random()*4+2.5,a:Math.random()*0.6+0.2,c:Math.random()<0.5?"t":(Math.random()<0.5?"p":"q")})}
 function drawP(){pCtx.clearRect(0,0,pCvs.width,pCvs.height);var tc2=themes[curTheme].p;pCtx.globalCompositeOperation="lighter";for(var i=0;i<parts.length;i++){var pp=parts[i];pp.x+=pp.vx;pp.y+=pp.vy;if(pp.x<0)pp.x=pCvs.width;if(pp.x>pCvs.width)pp.x=0;if(pp.y<0)pp.y=pCvs.height;if(pp.y>pCvs.height)pp.y=0;var col;if(pp.c==="t")col=tc2[0]+","+tc2[1]+","+tc2[2];else if(pp.c==="p")col="150,50,200";else col="200,50,150";pCtx.globalAlpha=pp.a;pCtx.fillStyle="rgba("+col+",1)";pCtx.beginPath();pCtx.arc(pp.x,pp.y,pp.sz,0,Math.PI*2);pCtx.fill()}pCtx.globalCompositeOperation="source-over";pCtx.globalAlpha=1}
 
 // WEBGL
@@ -420,7 +535,7 @@ function bindM(buf){gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.enableVertexAttribArra
 
 // INNER CUBES
 var curShape="cube";
-var innerC=[{c:[1,.2,.3],o:.65,s:.4,p:0,sc:.25,sp:.25},{c:[.2,1,.3],o:.65,s:.5,p:Math.PI/4,sc:.25,sp:.25},{c:[.2,.3,1],o:.65,s:.6,p:Math.PI/2,sc:.25,sp:.25},{c:[1,1,.2],o:.65,s:.45,p:3*Math.PI/4,sc:.25,sp:.25},{c:[1,.2,1],o:.65,s:.55,p:Math.PI,sc:.25,sp:.25},{c:[.2,1,1],o:.65,s:.35,p:5*Math.PI/4,sc:.25,sp:.25},{c:[1,.6,.1],o:.65,s:.48,p:3*Math.PI/2,sc:.25,sp:.25},{c:[.6,.2,1],o:.65,s:.52,p:7*Math.PI/4,sc:.25,sp:.25}];
+var innerC=[{c:[1,.2,.3],o:.7,s:.4,p:0,sc:.35,sp:.25},{c:[.2,1,.3],o:.7,s:.5,p:Math.PI/4,sc:.35,sp:.25},{c:[.2,.3,1],o:.7,s:.6,p:Math.PI/2,sc:.35,sp:.25},{c:[1,1,.2],o:.7,s:.45,p:3*Math.PI/4,sc:.35,sp:.25},{c:[1,.2,1],o:.7,s:.55,p:Math.PI,sc:.35,sp:.25},{c:[.2,1,1],o:.7,s:.35,p:5*Math.PI/4,sc:.35,sp:.25},{c:[1,.6,.1],o:.7,s:.48,p:3*Math.PI/2,sc:.35,sp:.25},{c:[.6,.2,1],o:.7,s:.52,p:7*Math.PI/4,sc:.35,sp:.25}];
 var iBufs=[],iCnts=[];
 function rebuild(shape){
   for(var i=0;i<iBufs.length;i++)gl.deleteBuffer(iBufs[i]);
@@ -524,16 +639,48 @@ function guiAddInput(p,x,y,cmd){if(!guiActiveId||!guiWins[guiActiveId])return;va
 function guiAddCheck(l,x,y,cmd){if(!guiActiveId||!guiWins[guiActiveId])return;var el=document.createElement("label");el.className="gui-check";var cb=document.createElement("input");cb.type="checkbox";el.appendChild(cb);el.appendChild(document.createTextNode(" "+l));el.style.left=x+"px";el.style.top=y+"px";if(cmd)cb.addEventListener("change",function(){var c=cmd.replace(/\$val/g,cb.checked);try{runCmd(c)}catch(e){}});guiWins[guiActiveId].body.appendChild(el)}
 
 // STUDIO
-var studioOpen=false;
+var studioOpen=false,studioRunning=false,studioOutputLines=0;
 function openStudio(){if(studioOpen)return;studioOpen=true;if(currentView!=="void")switchView("void");
-var ov=document.createElement("div");ov.id="studio";ov.style.cssText="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:50;background:#0a0a1a;display:flex;flex-direction:column";
-ov.innerHTML="<div style='display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:rgba(43,208,208,0.08);border-bottom:1px solid rgba(43,208,208,0.2)'><span style='color:rgba(43,208,208,0.9);font-size:13px'>VOIDSCRIPT STUDIO</span><div><button id='stRun' style='background:rgba(80,255,80,0.15);border:1px solid rgba(80,255,80,0.4);color:rgba(80,255,80,0.9);padding:4px 12px;margin:0 4px;cursor:pointer;font-family:inherit;font-size:11px'>RUN (Ctrl+Enter)</button><button id='stStop' style='background:rgba(255,80,80,0.15);border:1px solid rgba(255,80,80,0.4);color:rgba(255,80,80,0.9);padding:4px 12px;margin:0 4px;cursor:pointer;font-family:inherit;font-size:11px'>STOP</button><button id='stExit' style='background:rgba(255,200,50,0.15);border:1px solid rgba(255,200,50,0.4);color:rgba(255,200,50,0.9);padding:4px 12px;margin:0 4px;cursor:pointer;font-family:inherit;font-size:11px'>EXIT</button></div></div><div style='flex:1;display:flex;overflow:hidden'><div style='flex:1;display:flex;flex-direction:column;border-right:1px solid rgba(43,208,208,0.15)'><div style='padding:4px 12px;font-size:11px;color:rgba(43,208,208,0.5)'>EDITOR</div><textarea id='stCode' style='flex:1;background:rgba(0,0,0,0.6);border:none;color:rgba(43,208,208,0.85);padding:12px;font-family:Consolas,monospace;font-size:13px;resize:none;outline:none;line-height:1.6' spellcheck='false'></textarea></div><div style='width:45%;display:flex;flex-direction:column'><div style='padding:4px 12px;font-size:11px;color:rgba(43,208,208,0.5)'>OUTPUT</div><div id='stOutput' style='flex:1;overflow-y:auto;padding:8px 12px;font-size:12px;color:rgba(43,208,208,0.7)'></div></div></div>";
-document.body.appendChild(ov);
-var code=document.getElementById("stCode"),out=document.getElementById("stOutput");var saved=localStorage.getItem("objbox_studio_autosave");if(saved)code.value=saved;code.addEventListener("input",function(){localStorage.setItem("objbox_studio_autosave",code.value)});
-document.getElementById("stRun").addEventListener("click",function(){out.innerHTML="";var lines=code.value.split("\n");for(var i=0;i<lines.length;i++){var l=lines[i].trim();if(!l||l.startsWith("//"))continue;try{runVoidScriptLine(l)}catch(e){}}var d=document.createElement("div");d.textContent="[done]";d.style.color="rgba(80,255,80,0.5)";out.appendChild(d)});
-document.getElementById("stStop").addEventListener("click",function(){guiClearAll();out.innerHTML=""});
-document.getElementById("stExit").addEventListener("click",function(){document.getElementById("studio").remove();studioOpen=false});
-code.addEventListener("keydown",function(e){if(e.key==="Enter"&&e.ctrlKey){e.preventDefault();document.getElementById("stRun").click()}if(e.key==="s"&&e.ctrlKey){e.preventDefault();localStorage.setItem("objbox_studio_autosave",code.value)}if(e.key==="Escape"){document.getElementById("stExit").click()}})}
+document.getElementById("terminal").style.display="none";
+document.getElementById("studio").classList.add("active");
+var code=document.getElementById("studioCode"),saved=localStorage.getItem("objbox_studio_autosave");if(saved)code.value=saved;
+code.addEventListener("input",function(){localStorage.setItem("objbox_studio_autosave",code.value);updateStudioLineNums()});
+updateStudioLineNums();
+document.getElementById("studioTheme").textContent=themes[curTheme].n;
+code.focus();
+}
+function closeStudio(){
+studioOpen=false;document.getElementById("studio").classList.remove("active");
+document.getElementById("terminal").style.display="flex";
+document.getElementById("studioPreviewArea").innerHTML="";
+document.getElementById("studioOutputBody").innerHTML="";
+document.getElementById("studioTerminalBody").innerHTML="";
+document.getElementById("studioHelpPanel").classList.remove("active");
+tIn.focus();
+}
+function updateStudioLineNums(){var code=document.getElementById("studioCode"),nums=document.getElementById("studioLineNums"),lines=code.value.split("\n"),html="";for(var i=1;i<=lines.length;i++)html+='<div class="ln">'+i+'</div>';nums.innerHTML=html}
+function studioSwitchTab(tab){
+document.querySelectorAll(".output-tab").forEach(function(t){t.classList.remove("active");if(t.getAttribute("data-tab")===tab)t.classList.add("active")});
+document.getElementById("studioOutputBody").style.display=tab==="output"?"block":"none";
+document.getElementById("studioTerminalBody").style.display=tab==="terminal"?"block":"none";
+if(tab==="terminal")document.getElementById("studioTerminalBody").scrollTop=document.getElementById("studioTerminalBody").scrollHeight;
+}
+function studioTerminalPrint(txt,cls){var body=document.getElementById("studioTerminalBody");if(!body)return;var line=document.createElement("div");line.className="outLine "+(cls||"");line.textContent=txt;body.appendChild(line);body.scrollTop=body.scrollHeight;var lines=body.querySelectorAll(".outLine");if(lines.length>500)lines[0].remove()}
+function studioPrint(txt){var body=document.getElementById("studioOutputBody"),line=document.createElement("div");line.textContent="> "+txt;line.style.color="rgba(43,208,208,0.7)";body.appendChild(line);studioOutputLines++;document.getElementById("studioOutputCount").textContent=studioOutputLines+" lines";body.scrollTop=body.scrollHeight}
+function studioPrintColor(txt,color){var body=document.getElementById("studioOutputBody"),line=document.createElement("div");line.textContent="> "+txt;line.style.color=color;body.appendChild(line);studioOutputLines++;document.getElementById("studioOutputCount").textContent=studioOutputLines+" lines";body.scrollTop=body.scrollHeight}
+function runStudioScript(){if(studioRunning)return;var code=document.getElementById("studioCode").value;if(!code.trim())return;studioRunning=true;document.getElementById("studioProcess").textContent="running";document.getElementById("studioOutputBody").innerHTML="";studioOutputLines=0;document.getElementById("studioOutputCount").textContent="0 lines";document.getElementById("studioPreviewArea").innerHTML="";
+var origTp=tp;tp=function(txt,col){studioPrint(txt);studioTerminalPrint(txt,"print")};
+try{var lines=code.split("\n");for(var i=0;i<lines.length;i++){var l=lines[i].trim();if(!l||l.startsWith("//"))continue;try{runVoidScriptLine(l)}catch(e){studioPrintColor("error: "+e.message,"rgba(255,80,80,0.8)");studioTerminalPrint("error: "+e.message,"error")}}}catch(e){}
+tp=origTp;studioRunning=false;document.getElementById("studioProcess").textContent="idle";
+var d=document.createElement("div");d.textContent="[done]";d.style.color="rgba(80,255,80,0.5)";document.getElementById("studioOutputBody").appendChild(d)}
+document.getElementById("studioRun").addEventListener("click",runStudioScript);
+document.getElementById("studioKill").addEventListener("click",function(){guiClearAll();studioRunning=false;document.getElementById("studioProcess").textContent="killed";document.getElementById("studioOutputBody").innerHTML=""});
+document.getElementById("studioExit").addEventListener("click",closeStudio);
+document.getElementById("studioHelp").addEventListener("click",function(){document.getElementById("studioHelpPanel").classList.toggle("active")});
+document.getElementById("studioHelpClose").addEventListener("click",function(){document.getElementById("studioHelpPanel").classList.remove("active")});
+document.getElementById("stTabOutput").addEventListener("click",function(){studioSwitchTab("output")});
+document.getElementById("stTabTerminal").addEventListener("click",function(){studioSwitchTab("terminal")});
+document.getElementById("studioCode").addEventListener("keydown",function(e){if(e.key==="Enter"&&e.ctrlKey){e.preventDefault();runStudioScript()}if(e.key==="s"&&e.ctrlKey){e.preventDefault();localStorage.setItem("objbox_studio_autosave",document.getElementById("studioCode").value)}if(e.key==="Escape")closeStudio()});
 
 // BOOT
 setTimeout(function(){tp("objbox ii initializing...","rgba(255,200,50,0.5)")},500);

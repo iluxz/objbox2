@@ -1,3 +1,17 @@
-﻿SAGE.DMMD.lnk
-ZORFHB.PGN PNG.PNG
-extractNORg.zip
+﻿# actual project files
+# index.html
+# void_drone.webm
+
+# lux's ARG artifacts
+*.txt
+*.exe
+*.cs
+*.lnk
+*.png
+*.zip
+*.PNG
+open this directory*
+GodMode.*
+Recycle Bin.*
+New folder.*
+Fold*
